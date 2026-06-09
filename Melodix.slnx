@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Melodix.Application/Melodix.Application.csproj" />
+  <Project Path="Melodix.Domain/Melodix.Domain.csproj" />
+  <Project Path="Melodix.Infrastructure/Melodix.Infrastructure.csproj" />
+  <Project Path="Melodix.Presentation/Melodix.Presentation.csproj" />
+  <Project Path="Melodix.Tests/Melodix.Tests.csproj" />
+</Solution>

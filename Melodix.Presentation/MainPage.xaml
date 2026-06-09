@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Melodix.Application.DTOs;assembly=Melodix.Application"
+             xmlns:viewModels="clr-namespace:Melodix.Presentation.ViewModels"
+             x:Class="Melodix.Presentation.MainPage"
+             x:DataType="viewModels:MainPageViewModel"
+             Title="Melodix">
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Agregar carpeta" Command="{Binding PickFolderCommand}" />
+        <ToolbarItem Text="Reescanear" Command="{Binding RefreshLibraryCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid Padding="24" RowDefinitions="Auto,*,Auto" RowSpacing="18">
+        <Border Background="{StaticResource SecondaryBrush}"
+                Padding="18"
+                StrokeThickness="0">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Melodix"
+                           FontFamily="OpenSansSemibold"
+                           FontSize="30"
+                           TextColor="{StaticResource Tertiary}" />
+                    <Label Text="Reproductor local para MP4, M4A y FLAC"
+                           FontSize="14"
+                           TextColor="{StaticResource Gray600}" />
+                    <Label Text="{Binding CurrentFolderPath}"
+                           FontSize="12"
+                           TextColor="{StaticResource Gray500}"
+                           IsVisible="{Binding HasLibraryFolder}"
+                           LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+
+                <ActivityIndicator Grid.Column="1"
+                                   IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   Color="{StaticResource Primary}" />
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Border IsVisible="{Binding IsLibraryEmpty}"
+                    BackgroundColor="#FFFDFC"
+                    Padding="28"
+                    Stroke="{StaticResource Gray200Brush}">
+                <VerticalStackLayout MaximumWidthRequest="460"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center"
+                                     Spacing="18">
+                    <Border Background="#F2F7F7"
+                            Padding="18"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 24">
+                        <Label Text="♪"
+                               HorizontalTextAlignment="Center"
+                               FontSize="36"
+                               TextColor="{StaticResource Primary}" />
+                    </Border>
+
+                    <Label Text="{Binding EmptyStateTitle}"
+                           FontFamily="OpenSansSemibold"
+                           FontSize="24"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{StaticResource Tertiary}" />
+
+                    <Label Text="{Binding EmptyStateMessage}"
+                           FontSize="14"
+                           HorizontalTextAlignment="Center"
+                           TextColor="{StaticResource Gray600}" />
+
+                    <Button Text="Agregar carpeta"
+                            Command="{Binding PickFolderCommand}" />
+
+                    <Button Text="Reescanear biblioteca"
+                            Command="{Binding RefreshLibraryCommand}"
+                            IsVisible="{Binding HasLibraryFolder}"
+                            BackgroundColor="#D9ECEE"
+                            TextColor="{StaticResource Tertiary}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border IsVisible="{Binding HasTracks}"
+                    Padding="0"
+                    BackgroundColor="#FFFDFC"
+                    Stroke="{StaticResource Gray200Brush}">
+                <CollectionView x:Name="TracksCollectionView"
+                                ItemsSource="{Binding Tracks}"
+                                SelectedItem="{Binding SelectedTrack, Mode=OneWay}"
+                                SelectionMode="Single"
+                                SelectionChanged="OnTrackSelectionChanged"
+                                ItemSizingStrategy="MeasureFirstItem"
+                                VerticalOptions="Fill">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:MediaTrackListItem">
+                            <Border Margin="14,10"
+                                    Padding="16"
+                                    MinimumHeightRequest="74"
+                                    BackgroundColor="#F7FAFA"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 18">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="{Binding FileName}"
+                                               FontFamily="OpenSansSemibold"
+                                               FontSize="16"
+                                               TextColor="{StaticResource Tertiary}"
+                                               LineBreakMode="TailTruncation"
+                                               MaxLines="1" />
+                                        <Label Text="{Binding Extension}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource Gray500}" />
+                                    </VerticalStackLayout>
+
+                                    <Label Grid.Column="1"
+                                           VerticalOptions="Center"
+                                           Text="Play"
+                                           FontSize="12"
+                                           TextColor="{StaticResource Primary}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Background="{StaticResource TertiaryBrush}"
+                Padding="16,14"
+                StrokeThickness="0"
+                StrokeShape="RoundRectangle 24">
+            <Grid RowDefinitions="Auto,Auto"
+                  RowSpacing="10">
+                <Grid ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="14">
+                    <Grid WidthRequest="52"
+                          HeightRequest="52">
+                        <Border BackgroundColor="{StaticResource Primary}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 12"
+                                IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
+                        <Image Source="{Binding CurrentArtworkPath}"
+                               Aspect="AspectFill"
+                               IsVisible="{Binding HasCurrentArtwork}" />
+                    </Grid>
+
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="2"
+                                         VerticalOptions="Center">
+                        <Label Text="{Binding CurrentTrackTitle}"
+                               FontFamily="OpenSansSemibold"
+                               FontSize="16"
+                               TextColor="{StaticResource White}"
+                               LineBreakMode="TailTruncation" />
+                        <Label Text="{Binding CurrentArtistName}"
+                               FontSize="12"
+                               TextColor="#D9ECEE"
+                               LineBreakMode="TailTruncation"
+                               IsVisible="{Binding HasCurrentArtist}" />
+                    </VerticalStackLayout>
+
+                    <HorizontalStackLayout Grid.Column="2"
+                                           Spacing="8"
+                                           VerticalOptions="Center">
+                        <Button Text="{Binding ShuffleButtonIcon}"
+                                Command="{Binding ToggleShuffleCommand}"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                BackgroundColor="{Binding ShuffleButtonBackgroundColor}"
+                                TextColor="{Binding ShuffleButtonTextColor}"
+                                Padding="10,8"
+                                MinimumWidthRequest="48" />
+                        <Button Text="{Binding PreviousTrackIcon}"
+                                Command="{Binding PlayPreviousTrackCommand}"
+                                IsEnabled="{Binding CanNavigateTracks}"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource White}"
+                                Padding="10,8"
+                                MinimumWidthRequest="48" />
+                        <Button Text="{Binding PlayPauseButtonIcon}"
+                                Command="{Binding TogglePlayPauseCommand}"
+                                IsEnabled="{Binding CanTogglePlayback}"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource White}"
+                                Padding="12,8"
+                                MinimumWidthRequest="52" />
+                        <Button Text="{Binding NextTrackIcon}"
+                                Command="{Binding PlayNextTrackCommand}"
+                                IsEnabled="{Binding CanNavigateTracks}"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource White}"
+                                Padding="10,8"
+                                MinimumWidthRequest="48" />
+                        <Button Text="{Binding RepeatButtonIcon}"
+                                Command="{Binding CycleRepeatModeCommand}"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="16"
+                                BackgroundColor="{Binding RepeatButtonBackgroundColor}"
+                                TextColor="{Binding RepeatButtonTextColor}"
+                                Padding="10,8"
+                                MinimumWidthRequest="48" />
+                    </HorizontalStackLayout>
+                </Grid>
+
+                <Grid Grid.Row="1"
+                      ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="10">
+                    <Label Text="{Binding ElapsedTimeText}"
+                           VerticalOptions="Center"
+                           FontSize="12"
+                           TextColor="#D9ECEE" />
+                    <Slider x:Name="PlaybackProgressSlider"
+                            Grid.Column="1"
+                            Minimum="0"
+                            Maximum="{Binding TrackDurationSeconds}"
+                            Value="{Binding TrackPositionSeconds}"
+                            MinimumTrackColor="{StaticResource Primary}"
+                            MaximumTrackColor="#6D92A0"
+                            ThumbColor="{StaticResource White}"
+                            DragStarted="OnPlaybackProgressDragStarted"
+                            DragCompleted="OnPlaybackProgressDragCompleted"
+                            ValueChanged="OnPlaybackProgressValueChanged" />
+                    <Label Grid.Column="2"
+                           Text="{Binding DurationTimeText}"
+                           VerticalOptions="Center"
+                           FontSize="12"
+                           TextColor="#D9ECEE" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</ContentPage>

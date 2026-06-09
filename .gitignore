@@ -1,0 +1,24 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.rsuser
+*.suo
+
+# Test output
+TestResults/
+
+# Local NuGet cache used by this repo
+.nuget/packages/
+
+# Local database and runtime cache
+*.db
+*.db-shm
+*.db-wal
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
