@@ -11,34 +11,11 @@
         <ToolbarItem Text="Reescanear" Command="{Binding RefreshLibraryCommand}" />
     </ContentPage.ToolbarItems>
 
-    <Grid Padding="24" RowDefinitions="Auto,*,Auto" RowSpacing="18">
-        <Border Background="{StaticResource SecondaryBrush}"
-                Padding="18"
-                StrokeThickness="0">
-            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                <VerticalStackLayout Spacing="4">
-                    <Label Text="Melodix"
-                           FontFamily="OpenSansSemibold"
-                           FontSize="30"
-                           TextColor="{StaticResource Tertiary}" />
-                    <Label Text="Reproductor local para MP4, M4A y FLAC"
-                           FontSize="14"
-                           TextColor="{StaticResource Gray600}" />
-                    <Label Text="{Binding CurrentFolderPath}"
-                           FontSize="12"
-                           TextColor="{StaticResource Gray500}"
-                           IsVisible="{Binding HasLibraryFolder}"
-                           LineBreakMode="TailTruncation" />
-                </VerticalStackLayout>
-
-                <ActivityIndicator Grid.Column="1"
-                                   IsRunning="{Binding IsBusy}"
-                                   IsVisible="{Binding IsBusy}"
-                                   Color="{StaticResource Primary}" />
-            </Grid>
-        </Border>
-
-        <Grid Grid.Row="1">
+    <Grid RowDefinitions="*,Auto"
+          RowSpacing="0"
+          BackgroundColor="#1F1F1F">
+        <Grid Grid.Row="0"
+              Margin="24,18,24,18">
             <Border IsVisible="{Binding IsLibraryEmpty}"
                     BackgroundColor="#FFFDFC"
                     Padding="28"
@@ -51,7 +28,7 @@
                             Padding="18"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 24">
-                        <Label Text="♪"
+                        <Label Text="&#x266A;"
                                HorizontalTextAlignment="Center"
                                FontSize="36"
                                TextColor="{StaticResource Primary}" />
@@ -125,115 +102,241 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="2"
-                Background="{StaticResource TertiaryBrush}"
-                Padding="16,14"
-                StrokeThickness="0"
-                StrokeShape="RoundRectangle 24">
-            <Grid RowDefinitions="Auto,Auto"
-                  RowSpacing="10">
-                <Grid ColumnDefinitions="Auto,*,Auto"
-                      ColumnSpacing="14">
-                    <Grid WidthRequest="52"
-                          HeightRequest="52">
-                        <Border BackgroundColor="{StaticResource Primary}"
-                                StrokeThickness="0"
-                                StrokeShape="RoundRectangle 12"
-                                IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
-                        <Image Source="{Binding CurrentArtworkPath}"
-                               Aspect="AspectFill"
-                               IsVisible="{Binding HasCurrentArtwork}" />
+        <Grid Grid.Row="1"
+              Margin="24,0,24,24">
+            <Border x:Name="MiniPlayerBorder"
+                    Background="{StaticResource TertiaryBrush}"
+                    Padding="16,14"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 24">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnMiniPlayerTapped" />
+                </Border.GestureRecognizers>
+
+                <Grid RowDefinitions="Auto,Auto"
+                      RowSpacing="10">
+                    <Grid ColumnDefinitions="Auto,*,Auto"
+                          ColumnSpacing="14">
+                        <Grid WidthRequest="52"
+                              HeightRequest="52">
+                            <Border BackgroundColor="{StaticResource Primary}"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 12"
+                                    IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
+                            <Image Source="{Binding CurrentArtworkPath}"
+                                   Aspect="AspectFill"
+                                   IsVisible="{Binding HasCurrentArtwork}" />
+                        </Grid>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             Spacing="2"
+                                             VerticalOptions="Center">
+                            <Label Text="{Binding CurrentTrackTitle}"
+                                   FontFamily="OpenSansSemibold"
+                                   FontSize="16"
+                                   TextColor="{StaticResource White}"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding CurrentArtistName}"
+                                   FontSize="12"
+                                   TextColor="#D9ECEE"
+                                   LineBreakMode="TailTruncation"
+                                   IsVisible="{Binding HasCurrentArtist}" />
+                        </VerticalStackLayout>
+
+                        <HorizontalStackLayout Grid.Column="2"
+                                               Spacing="8"
+                                               VerticalOptions="Center">
+                            <Button Text="{Binding ShuffleButtonIcon}"
+                                    Command="{Binding ToggleShuffleCommand}"
+                                    FontFamily="Segoe UI Symbol"
+                                    FontSize="16"
+                                    BackgroundColor="{Binding ShuffleButtonBackgroundColor}"
+                                    TextColor="{Binding ShuffleButtonTextColor}"
+                                    Padding="10,8"
+                                    MinimumWidthRequest="48" />
+                            <Button Text="{Binding PreviousTrackIcon}"
+                                    Command="{Binding PlayPreviousTrackCommand}"
+                                    IsEnabled="{Binding CanNavigateTracks}"
+                                    FontFamily="Segoe UI Symbol"
+                                    FontSize="16"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{StaticResource White}"
+                                    Padding="10,8"
+                                    MinimumWidthRequest="48" />
+                            <Button Text="{Binding PlayPauseButtonIcon}"
+                                    Command="{Binding TogglePlayPauseCommand}"
+                                    IsEnabled="{Binding CanTogglePlayback}"
+                                    FontFamily="Segoe UI Symbol"
+                                    FontSize="16"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="{StaticResource White}"
+                                    Padding="12,8"
+                                    MinimumWidthRequest="52" />
+                            <Button Text="{Binding NextTrackIcon}"
+                                    Command="{Binding PlayNextTrackCommand}"
+                                    IsEnabled="{Binding CanNavigateTracks}"
+                                    FontFamily="Segoe UI Symbol"
+                                    FontSize="16"
+                                    BackgroundColor="Transparent"
+                                    TextColor="{StaticResource White}"
+                                    Padding="10,8"
+                                    MinimumWidthRequest="48" />
+                            <Button Text="{Binding RepeatButtonIcon}"
+                                    Command="{Binding CycleRepeatModeCommand}"
+                                    FontFamily="Segoe UI Symbol"
+                                    FontSize="16"
+                                    BackgroundColor="{Binding RepeatButtonBackgroundColor}"
+                                    TextColor="{Binding RepeatButtonTextColor}"
+                                    Padding="10,8"
+                                    MinimumWidthRequest="48" />
+                        </HorizontalStackLayout>
                     </Grid>
 
-                    <VerticalStackLayout Grid.Column="1"
-                                         Spacing="2"
-                                         VerticalOptions="Center">
-                        <Label Text="{Binding CurrentTrackTitle}"
-                               FontFamily="OpenSansSemibold"
-                               FontSize="16"
-                               TextColor="{StaticResource White}"
-                               LineBreakMode="TailTruncation" />
-                        <Label Text="{Binding CurrentArtistName}"
+                    <Grid Grid.Row="1"
+                          ColumnDefinitions="Auto,*,Auto"
+                          ColumnSpacing="10">
+                        <Label Text="{Binding ElapsedTimeText}"
+                               VerticalOptions="Center"
                                FontSize="12"
-                               TextColor="#D9ECEE"
-                               LineBreakMode="TailTruncation"
-                               IsVisible="{Binding HasCurrentArtist}" />
-                    </VerticalStackLayout>
-
-                    <HorizontalStackLayout Grid.Column="2"
-                                           Spacing="8"
-                                           VerticalOptions="Center">
-                        <Button Text="{Binding ShuffleButtonIcon}"
-                                Command="{Binding ToggleShuffleCommand}"
-                                FontFamily="Segoe UI Symbol"
-                                FontSize="16"
-                                BackgroundColor="{Binding ShuffleButtonBackgroundColor}"
-                                TextColor="{Binding ShuffleButtonTextColor}"
-                                Padding="10,8"
-                                MinimumWidthRequest="48" />
-                        <Button Text="{Binding PreviousTrackIcon}"
-                                Command="{Binding PlayPreviousTrackCommand}"
-                                IsEnabled="{Binding CanNavigateTracks}"
-                                FontFamily="Segoe UI Symbol"
-                                FontSize="16"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource White}"
-                                Padding="10,8"
-                                MinimumWidthRequest="48" />
-                        <Button Text="{Binding PlayPauseButtonIcon}"
-                                Command="{Binding TogglePlayPauseCommand}"
-                                IsEnabled="{Binding CanTogglePlayback}"
-                                FontFamily="Segoe UI Symbol"
-                                FontSize="16"
-                                BackgroundColor="{StaticResource Primary}"
-                                TextColor="{StaticResource White}"
-                                Padding="12,8"
-                                MinimumWidthRequest="52" />
-                        <Button Text="{Binding NextTrackIcon}"
-                                Command="{Binding PlayNextTrackCommand}"
-                                IsEnabled="{Binding CanNavigateTracks}"
-                                FontFamily="Segoe UI Symbol"
-                                FontSize="16"
-                                BackgroundColor="Transparent"
-                                TextColor="{StaticResource White}"
-                                Padding="10,8"
-                                MinimumWidthRequest="48" />
-                        <Button Text="{Binding RepeatButtonIcon}"
-                                Command="{Binding CycleRepeatModeCommand}"
-                                FontFamily="Segoe UI Symbol"
-                                FontSize="16"
-                                BackgroundColor="{Binding RepeatButtonBackgroundColor}"
-                                TextColor="{Binding RepeatButtonTextColor}"
-                                Padding="10,8"
-                                MinimumWidthRequest="48" />
-                    </HorizontalStackLayout>
+                               TextColor="#D9ECEE" />
+                        <Slider x:Name="PlaybackProgressSlider"
+                                Grid.Column="1"
+                                Minimum="0"
+                                Maximum="{Binding TrackDurationSeconds}"
+                                Value="{Binding TrackPositionSeconds}"
+                                MinimumTrackColor="{StaticResource Primary}"
+                                MaximumTrackColor="#6D92A0"
+                                ThumbColor="{StaticResource White}"
+                                DragStarted="OnPlaybackProgressDragStarted"
+                                DragCompleted="OnPlaybackProgressDragCompleted"
+                                ValueChanged="OnPlaybackProgressValueChanged" />
+                        <Label Grid.Column="2"
+                               Text="{Binding DurationTimeText}"
+                               VerticalOptions="Center"
+                               FontSize="12"
+                               TextColor="#D9ECEE" />
+                    </Grid>
                 </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="ExpandedPlayerBorder"
+              Grid.RowSpan="2"
+              IsVisible="False"
+              Opacity="0"
+              TranslationY="36"
+              BackgroundColor="#1F1F1F"
+              Padding="28,22,28,32">
+            <Grid RowDefinitions="Auto,*,Auto,Auto,Auto"
+                  RowSpacing="20"
+                  HorizontalOptions="Fill"
+                  MaximumWidthRequest="430">
+                <Button Text="&#x2304;"
+                        Clicked="OnMinimizePlayerClicked"
+                        WidthRequest="44"
+                        HeightRequest="44"
+                        Padding="0"
+                        HorizontalOptions="Start"
+                        FontSize="26"
+                        FontFamily="Segoe UI Symbol"
+                        BackgroundColor="Transparent"
+                        TextColor="{StaticResource White}" />
 
                 <Grid Grid.Row="1"
-                      ColumnDefinitions="Auto,*,Auto"
-                      ColumnSpacing="10">
-                    <Label Text="{Binding ElapsedTimeText}"
-                           VerticalOptions="Center"
-                           FontSize="12"
-                           TextColor="#D9ECEE" />
-                    <Slider x:Name="PlaybackProgressSlider"
-                            Grid.Column="1"
+                      HeightRequest="360"
+                      MaximumHeightRequest="380"
+                      VerticalOptions="Center">
+                    <Border BackgroundColor="{StaticResource Primary}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 16"
+                            IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
+                    <Image Source="{Binding CurrentArtworkPath}"
+                           Aspect="AspectFit"
+                           IsVisible="{Binding HasCurrentArtwork}" />
+                </Grid>
+
+                <VerticalStackLayout Grid.Row="2"
+                                     Spacing="4">
+                    <Label Text="{Binding CurrentTrackTitle}"
+                           FontFamily="OpenSansSemibold"
+                           FontSize="24"
+                           TextColor="{StaticResource White}"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="1" />
+                    <Label Text="{Binding CurrentArtistName}"
+                           FontSize="15"
+                           TextColor="#D9D9E2"
+                           LineBreakMode="TailTruncation"
+                           MaxLines="1"
+                           IsVisible="{Binding HasCurrentArtist}" />
+                </VerticalStackLayout>
+
+                <Grid Grid.Row="3"
+                      RowDefinitions="Auto,Auto"
+                      RowSpacing="2">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Label Text="{Binding ElapsedTimeText}"
+                               FontSize="12"
+                               TextColor="#D9D9E2" />
+                        <Label Grid.Column="2"
+                               Text="{Binding DurationTimeText}"
+                               FontSize="12"
+                               TextColor="#D9D9E2" />
+                    </Grid>
+
+                    <Slider x:Name="ExpandedPlaybackProgressSlider"
+                            Grid.Row="1"
                             Minimum="0"
                             Maximum="{Binding TrackDurationSeconds}"
                             Value="{Binding TrackPositionSeconds}"
-                            MinimumTrackColor="{StaticResource Primary}"
-                            MaximumTrackColor="#6D92A0"
-                            ThumbColor="{StaticResource White}"
+                            MinimumTrackColor="#C4A2FF"
+                            MaximumTrackColor="#353535"
+                            ThumbColor="#C4A2FF"
                             DragStarted="OnPlaybackProgressDragStarted"
-                            DragCompleted="OnPlaybackProgressDragCompleted"
+                            DragCompleted="OnExpandedPlaybackProgressDragCompleted"
                             ValueChanged="OnPlaybackProgressValueChanged" />
-                    <Label Grid.Column="2"
-                           Text="{Binding DurationTimeText}"
-                           VerticalOptions="Center"
-                           FontSize="12"
-                           TextColor="#D9ECEE" />
+                </Grid>
+
+                <Grid Grid.Row="4"
+                      ColumnDefinitions="*,Auto,Auto,Auto,*"
+                      ColumnSpacing="18"
+                      HorizontalOptions="Center">
+                    <Button Grid.Column="1"
+                            Text="{Binding PreviousTrackIcon}"
+                            Command="{Binding PlayPreviousTrackCommand}"
+                            IsEnabled="{Binding CanNavigateTracks}"
+                            WidthRequest="52"
+                            HeightRequest="52"
+                            Padding="0"
+                            FontFamily="Segoe UI Symbol"
+                            FontSize="20"
+                            BackgroundColor="Transparent"
+                            TextColor="#D9D9E2" />
+                    <Button Grid.Column="2"
+                            Text="{Binding PlayPauseButtonIcon}"
+                            Command="{Binding TogglePlayPauseCommand}"
+                            IsEnabled="{Binding CanTogglePlayback}"
+                            WidthRequest="64"
+                            HeightRequest="64"
+                            Padding="0"
+                            FontFamily="Segoe UI Symbol"
+                            FontSize="24"
+                            CornerRadius="32"
+                            BackgroundColor="#C4A2FF"
+                            TextColor="#1F1F1F" />
+                    <Button Grid.Column="3"
+                            Text="{Binding NextTrackIcon}"
+                            Command="{Binding PlayNextTrackCommand}"
+                            IsEnabled="{Binding CanNavigateTracks}"
+                            WidthRequest="52"
+                            HeightRequest="52"
+                            Padding="0"
+                            FontFamily="Segoe UI Symbol"
+                            FontSize="20"
+                            BackgroundColor="Transparent"
+                            TextColor="#D9D9E2" />
                 </Grid>
             </Grid>
-        </Border>
+        </Grid>
     </Grid>
 </ContentPage>

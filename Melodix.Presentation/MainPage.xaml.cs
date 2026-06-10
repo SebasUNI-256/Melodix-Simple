@@ -10,6 +10,8 @@ public partial class MainPage : ContentPage
     private bool _hasLoaded;
     private bool _isSeeking;
     private bool _isSyncingSelection;
+    private bool _isPlayerExpanded;
+    private bool _isPlayerAnimating;
 
     public MainPage(MainPageViewModel viewModel)
     {
@@ -63,6 +65,12 @@ public partial class MainPage : ContentPage
         await _viewModel.CompleteSeekAsync(PlaybackProgressSlider.Value);
     }
 
+    private async void OnExpandedPlaybackProgressDragCompleted(object? sender, EventArgs e)
+    {
+        _isSeeking = false;
+        await _viewModel.CompleteSeekAsync(ExpandedPlaybackProgressSlider.Value);
+    }
+
     private void OnPlaybackProgressValueChanged(object? sender, ValueChangedEventArgs e)
     {
         if (_isSeeking)
@@ -77,6 +85,67 @@ public partial class MainPage : ContentPage
         {
             MainThread.BeginInvokeOnMainThread(SyncSelectionFromViewModel);
         }
+    }
+
+    private async void OnMiniPlayerTapped(object? sender, TappedEventArgs e)
+    {
+        await ExpandPlayerAsync();
+    }
+
+    private async void OnMinimizePlayerClicked(object? sender, EventArgs e)
+    {
+        await CollapsePlayerAsync();
+    }
+
+    private async Task ExpandPlayerAsync()
+    {
+        if (_isPlayerExpanded || _isPlayerAnimating)
+        {
+            return;
+        }
+
+        _isPlayerAnimating = true;
+        _isPlayerExpanded = true;
+
+        ExpandedPlayerBorder.IsVisible = true;
+        ExpandedPlayerBorder.Opacity = 0;
+        ExpandedPlayerBorder.Scale = 0.985;
+        ExpandedPlayerBorder.TranslationY = 48;
+
+        await Task.WhenAll(
+            MiniPlayerBorder.FadeToAsync(0, 180, Easing.CubicOut),
+            MiniPlayerBorder.ScaleToAsync(0.985, 180, Easing.CubicOut),
+            ExpandedPlayerBorder.FadeToAsync(1, 280, Easing.CubicOut),
+            ExpandedPlayerBorder.ScaleToAsync(1, 280, Easing.CubicOut),
+            ExpandedPlayerBorder.TranslateToAsync(0, 0, 280, Easing.CubicOut));
+
+        MiniPlayerBorder.IsVisible = false;
+        _isPlayerAnimating = false;
+    }
+
+    private async Task CollapsePlayerAsync()
+    {
+        if (!_isPlayerExpanded || _isPlayerAnimating)
+        {
+            return;
+        }
+
+        _isPlayerAnimating = true;
+
+        MiniPlayerBorder.IsVisible = true;
+        MiniPlayerBorder.Opacity = 0;
+        MiniPlayerBorder.Scale = 0.98;
+
+        await Task.WhenAll(
+            ExpandedPlayerBorder.FadeToAsync(0, 220, Easing.CubicIn),
+            ExpandedPlayerBorder.ScaleToAsync(0.985, 220, Easing.CubicIn),
+            ExpandedPlayerBorder.TranslateToAsync(0, 48, 220, Easing.CubicIn),
+            MiniPlayerBorder.FadeToAsync(1, 240, Easing.CubicOut),
+            MiniPlayerBorder.ScaleToAsync(1, 240, Easing.CubicOut));
+
+        ExpandedPlayerBorder.IsVisible = false;
+        _isPlayerExpanded = false;
+        _isPlayerAnimating = false;
     }
 
     private void SyncSelectionFromViewModel()
