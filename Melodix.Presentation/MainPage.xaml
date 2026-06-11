@@ -13,18 +13,18 @@
 
     <Grid RowDefinitions="*,Auto"
           RowSpacing="0"
-          BackgroundColor="#1F1F1F">
+          BackgroundColor="{StaticResource Black}">
         <Grid Grid.Row="0"
               Margin="24,18,24,18">
             <Border IsVisible="{Binding IsLibraryEmpty}"
-                    BackgroundColor="#FFFDFC"
+                    BackgroundColor="{StaticResource Gray950}"
                     Padding="28"
-                    Stroke="{StaticResource Gray200Brush}">
+                    Stroke="{StaticResource Gray600Brush}">
                 <VerticalStackLayout MaximumWidthRequest="460"
                                      HorizontalOptions="Center"
                                      VerticalOptions="Center"
                                      Spacing="18">
-                    <Border Background="#F2F7F7"
+                    <Border Background="{StaticResource Gray900}"
                             Padding="18"
                             StrokeThickness="0"
                             StrokeShape="RoundRectangle 24">
@@ -38,12 +38,12 @@
                            FontFamily="OpenSansSemibold"
                            FontSize="24"
                            HorizontalTextAlignment="Center"
-                           TextColor="{StaticResource Tertiary}" />
+                           TextColor="{StaticResource White}" />
 
                     <Label Text="{Binding EmptyStateMessage}"
                            FontSize="14"
                            HorizontalTextAlignment="Center"
-                           TextColor="{StaticResource Gray600}" />
+                           TextColor="{StaticResource Gray300}" />
 
                     <Button Text="Agregar carpeta"
                             Command="{Binding PickFolderCommand}" />
@@ -51,15 +51,15 @@
                     <Button Text="Reescanear biblioteca"
                             Command="{Binding RefreshLibraryCommand}"
                             IsVisible="{Binding HasLibraryFolder}"
-                            BackgroundColor="#D9ECEE"
-                            TextColor="{StaticResource Tertiary}" />
+                            BackgroundColor="{StaticResource Gray900}"
+                            TextColor="{StaticResource Secondary}" />
                 </VerticalStackLayout>
             </Border>
 
             <Border IsVisible="{Binding HasTracks}"
                     Padding="0"
-                    BackgroundColor="#FFFDFC"
-                    Stroke="{StaticResource Gray200Brush}">
+                    BackgroundColor="{StaticResource Gray950}"
+                    Stroke="{StaticResource Gray600Brush}">
                 <CollectionView x:Name="TracksCollectionView"
                                 ItemsSource="{Binding Tracks}"
                                 SelectedItem="{Binding SelectedTrack, Mode=OneWay}"
@@ -72,7 +72,7 @@
                             <Border Margin="14,10"
                                     Padding="16"
                                     MinimumHeightRequest="74"
-                                    BackgroundColor="#F7FAFA"
+                                    BackgroundColor="{StaticResource Gray900}"
                                     StrokeThickness="0"
                                     StrokeShape="RoundRectangle 18">
                                 <Grid ColumnDefinitions="*,Auto"
@@ -81,12 +81,12 @@
                                         <Label Text="{Binding FileName}"
                                                FontFamily="OpenSansSemibold"
                                                FontSize="16"
-                                               TextColor="{StaticResource Tertiary}"
+                                               TextColor="{StaticResource White}"
                                                LineBreakMode="TailTruncation"
                                                MaxLines="1" />
                                         <Label Text="{Binding Extension}"
                                                FontSize="12"
-                                               TextColor="{StaticResource Gray500}" />
+                                               TextColor="{StaticResource Gray400}" />
                                     </VerticalStackLayout>
 
                                     <Label Grid.Column="1"
@@ -105,9 +105,10 @@
         <Grid Grid.Row="1"
               Margin="24,0,24,24">
             <Border x:Name="MiniPlayerBorder"
-                    Background="{StaticResource TertiaryBrush}"
+                    Background="{StaticResource Gray900Brush}"
                     Padding="16,14"
-                    StrokeThickness="0"
+                    Stroke="{StaticResource Gray600Brush}"
+                    StrokeThickness="1"
                     StrokeShape="RoundRectangle 24">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnMiniPlayerTapped" />
@@ -138,7 +139,7 @@
                                    LineBreakMode="TailTruncation" />
                             <Label Text="{Binding CurrentArtistName}"
                                    FontSize="12"
-                                   TextColor="#D9ECEE"
+                                   TextColor="{StaticResource Gray300}"
                                    LineBreakMode="TailTruncation"
                                    IsVisible="{Binding HasCurrentArtist}" />
                         </VerticalStackLayout>
@@ -198,15 +199,15 @@
                         <Label Text="{Binding ElapsedTimeText}"
                                VerticalOptions="Center"
                                FontSize="12"
-                               TextColor="#D9ECEE" />
+                               TextColor="{StaticResource Gray300}" />
                         <Slider x:Name="PlaybackProgressSlider"
                                 Grid.Column="1"
                                 Minimum="0"
                                 Maximum="{Binding TrackDurationSeconds}"
                                 Value="{Binding TrackPositionSeconds}"
                                 MinimumTrackColor="{StaticResource Primary}"
-                                MaximumTrackColor="#6D92A0"
-                                ThumbColor="{StaticResource White}"
+                                MaximumTrackColor="{StaticResource Gray600}"
+                                ThumbColor="{StaticResource Secondary}"
                                 DragStarted="OnPlaybackProgressDragStarted"
                                 DragCompleted="OnPlaybackProgressDragCompleted"
                                 ValueChanged="OnPlaybackProgressValueChanged" />
@@ -214,7 +215,7 @@
                                Text="{Binding DurationTimeText}"
                                VerticalOptions="Center"
                                FontSize="12"
-                               TextColor="#D9ECEE" />
+                               TextColor="{StaticResource Gray300}" />
                     </Grid>
                 </Grid>
             </Border>
@@ -225,7 +226,7 @@
               IsVisible="False"
               Opacity="0"
               TranslationY="36"
-              BackgroundColor="#1F1F1F"
+              BackgroundColor="{StaticResource Black}"
               Padding="28,22,28,32">
             <Grid RowDefinitions="Auto,*,Auto,Auto,Auto"
                   RowSpacing="20"
@@ -265,7 +266,7 @@
                            MaxLines="1" />
                     <Label Text="{Binding CurrentArtistName}"
                            FontSize="15"
-                           TextColor="#D9D9E2"
+                           TextColor="{StaticResource Gray300}"
                            LineBreakMode="TailTruncation"
                            MaxLines="1"
                            IsVisible="{Binding HasCurrentArtist}" />
@@ -277,11 +278,11 @@
                     <Grid ColumnDefinitions="Auto,*,Auto">
                         <Label Text="{Binding ElapsedTimeText}"
                                FontSize="12"
-                               TextColor="#D9D9E2" />
+                               TextColor="{StaticResource Gray300}" />
                         <Label Grid.Column="2"
                                Text="{Binding DurationTimeText}"
                                FontSize="12"
-                               TextColor="#D9D9E2" />
+                               TextColor="{StaticResource Gray300}" />
                     </Grid>
 
                     <Slider x:Name="ExpandedPlaybackProgressSlider"
@@ -289,9 +290,9 @@
                             Minimum="0"
                             Maximum="{Binding TrackDurationSeconds}"
                             Value="{Binding TrackPositionSeconds}"
-                            MinimumTrackColor="#C4A2FF"
-                            MaximumTrackColor="#353535"
-                            ThumbColor="#C4A2FF"
+                            MinimumTrackColor="{StaticResource Primary}"
+                            MaximumTrackColor="{StaticResource Gray600}"
+                            ThumbColor="{StaticResource Secondary}"
                             DragStarted="OnPlaybackProgressDragStarted"
                             DragCompleted="OnExpandedPlaybackProgressDragCompleted"
                             ValueChanged="OnPlaybackProgressValueChanged" />
@@ -311,7 +312,7 @@
                             FontFamily="Segoe UI Symbol"
                             FontSize="20"
                             BackgroundColor="Transparent"
-                            TextColor="#D9D9E2" />
+                            TextColor="{StaticResource Gray300}" />
                     <Button Grid.Column="2"
                             Text="{Binding PlayPauseButtonIcon}"
                             Command="{Binding TogglePlayPauseCommand}"
@@ -322,8 +323,8 @@
                             FontFamily="Segoe UI Symbol"
                             FontSize="24"
                             CornerRadius="32"
-                            BackgroundColor="#C4A2FF"
-                            TextColor="#1F1F1F" />
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="{StaticResource White}" />
                     <Button Grid.Column="3"
                             Text="{Binding NextTrackIcon}"
                             Command="{Binding PlayNextTrackCommand}"
@@ -334,7 +335,7 @@
                             FontFamily="Segoe UI Symbol"
                             FontSize="20"
                             BackgroundColor="Transparent"
-                            TextColor="#D9D9E2" />
+                            TextColor="{StaticResource Gray300}" />
                 </Grid>
             </Grid>
         </Grid>

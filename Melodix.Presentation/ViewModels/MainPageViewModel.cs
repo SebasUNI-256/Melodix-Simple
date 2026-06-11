@@ -247,13 +247,13 @@ public partial class MainPageViewModel : ObservableObject
 
     public string RepeatButtonIcon => _repeatMode == PlaybackRepeatMode.One ? "↺" : "↻";
 
-    public Color ShuffleButtonBackgroundColor => IsShuffleEnabled ? Color.FromArgb("#244A56") : Colors.Transparent;
+    public Color ShuffleButtonBackgroundColor => IsShuffleEnabled ? Color.FromArgb("#3B2A63") : Colors.Transparent;
 
-    public Color ShuffleButtonTextColor => IsShuffleEnabled ? Color.FromArgb("#F4A261") : Colors.White;
+    public Color ShuffleButtonTextColor => IsShuffleEnabled ? Color.FromArgb("#A78BFA") : Colors.White;
 
-    public Color RepeatButtonBackgroundColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.Transparent : Color.FromArgb("#244A56");
+    public Color RepeatButtonBackgroundColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.Transparent : Color.FromArgb("#3B2A63");
 
-    public Color RepeatButtonTextColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.White : Color.FromArgb("#F4A261");
+    public Color RepeatButtonTextColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.White : Color.FromArgb("#A78BFA");
 
     public string ElapsedTimeText => FormatTime(TimeSpan.FromSeconds(TrackPositionSeconds));
 
