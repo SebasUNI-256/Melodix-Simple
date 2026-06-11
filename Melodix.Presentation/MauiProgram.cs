@@ -9,6 +9,7 @@ namespace Melodix.Presentation;
 
 public static class MauiProgram
 {
+	// Configura y construye la app MAUI.
 	public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
@@ -26,6 +27,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ILibrarySynchronizationService, LibrarySynchronizationService>();
         builder.Services.AddSingleton<LibraryManagementService>();
         builder.Services.AddSingleton<PlaybackController>();
+        builder.Services.AddSingleton<PlaybackQueueService>();
         builder.Services.AddSingleton<IPlaybackService, WindowsPlaybackService>();
         builder.Services.AddSingleton<IFolderPickerService, FolderPickerService>();
         builder.Services.AddSingleton<ITrackMetadataService, WindowsTrackMetadataService>();

@@ -20,12 +20,14 @@ public sealed class WindowsTrackMetadataService : ITrackMetadataService
 {
     private readonly string _artworkCacheDirectory;
 
+    // Prepara la carpeta local para guardar caratulas.
     public WindowsTrackMetadataService()
     {
         _artworkCacheDirectory = Path.Combine(FileSystem.CacheDirectory, "artwork");
         Directory.CreateDirectory(_artworkCacheDirectory);
     }
 
+    // Lee metadatos y caratula de un archivo de audio.
     public async Task<TrackPresentationMetadata> GetMetadataAsync(string filePath, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -54,6 +56,7 @@ public sealed class WindowsTrackMetadataService : ITrackMetadataService
         }
     }
 
+    // Extrae la imagen de vista previa y la guarda en cache.
     private async Task<string?> TryExtractArtworkAsync(StorageFile storageFile, string filePath, CancellationToken cancellationToken)
     {
         var thumbnail = await storageFile.GetThumbnailAsync(ThumbnailMode.MusicView, 160, ThumbnailOptions.UseCurrentScale);
@@ -80,6 +83,7 @@ public sealed class WindowsTrackMetadataService : ITrackMetadataService
         return cachePath;
     }
 
+    // Genera una clave estable para la cache.
     private static string BuildCacheKey(string filePath)
     {
         var lastWrite = File.GetLastWriteTimeUtc(filePath).Ticks;
@@ -87,11 +91,13 @@ public sealed class WindowsTrackMetadataService : ITrackMetadataService
         return Convert.ToHexString(SHA256.HashData(payload));
     }
 
+    // Toma el primer valor no vacio de la lista.
     private static string FirstNonEmpty(params string[] values)
     {
         return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
     }
 
+    // Crea metadatos basicos si falla la lectura.
     private static TrackPresentationMetadata CreateFallback(string filePath)
     {
         var title = string.IsNullOrWhiteSpace(filePath)

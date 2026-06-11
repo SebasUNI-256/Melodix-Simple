@@ -10,6 +10,7 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
     private readonly MediaPlayer _mediaPlayer = new();
     private string? _currentFilePath;
 
+    // Prepara el reproductor nativo y sus eventos.
     public WindowsPlaybackService()
     {
         _mediaPlayer.MediaEnded += OnMediaEnded;
@@ -17,6 +18,7 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
 
     public event EventHandler? PlaybackEnded;
 
+    // Inicia la reproduccion de un archivo.
     public Task PlayAsync(string filePath, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -46,6 +48,7 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
         return Task.CompletedTask;
     }
 
+    // Pausa la reproduccion activa.
     public Task PauseAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -53,6 +56,7 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
         return Task.CompletedTask;
     }
 
+    // Mueve el punto de reproduccion.
     public Task SeekAsync(TimeSpan position, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -68,6 +72,7 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
         return Task.CompletedTask;
     }
 
+    // Devuelve el estado actual del reproductor.
     public Task<PlaybackStateSnapshot> GetCurrentPlaybackStateAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -80,12 +85,14 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
         return Task.FromResult(new PlaybackStateSnapshot(_currentFilePath, isPlaying, position, duration));
     }
 
+    // Libera los recursos del reproductor.
     public void Dispose()
     {
         _mediaPlayer.MediaEnded -= OnMediaEnded;
         _mediaPlayer.Dispose();
     }
 
+    // Dispara el evento cuando termina una pista.
     private void OnMediaEnded(MediaPlayer sender, object args)
     {
         PlaybackEnded?.Invoke(this, EventArgs.Empty);

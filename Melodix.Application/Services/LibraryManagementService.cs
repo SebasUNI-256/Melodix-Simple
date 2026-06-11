@@ -8,6 +8,7 @@ public sealed class LibraryManagementService
     private readonly IMediaLibraryRepository _mediaLibraryRepository;
     private readonly ILibrarySynchronizationService _librarySynchronizationService;
 
+    // Conecta el servicio con el repositorio y la sincronizacion.
     public LibraryManagementService(
         IMediaLibraryRepository mediaLibraryRepository,
         ILibrarySynchronizationService librarySynchronizationService)
@@ -16,9 +17,11 @@ public sealed class LibraryManagementService
         _librarySynchronizationService = librarySynchronizationService;
     }
 
+    // Carga la biblioteca activa al iniciar.
     public Task<LibraryLoadResult> InitializeAsync(CancellationToken cancellationToken = default)
         => _librarySynchronizationService.SynchronizeAsync(cancellationToken);
 
+    // Guarda la carpeta elegida y vuelve a sincronizar.
     public async Task<LibraryLoadResult> SelectLibraryFolderAsync(string folderPath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(folderPath))
@@ -30,9 +33,11 @@ public sealed class LibraryManagementService
         return await _librarySynchronizationService.SynchronizeAsync(cancellationToken);
     }
 
+    // Refresca la biblioteca desde disco.
     public Task<LibraryLoadResult> RefreshLibraryAsync(CancellationToken cancellationToken = default)
         => _librarySynchronizationService.SynchronizeAsync(cancellationToken);
 
+    // Devuelve las pistas guardadas de la carpeta activa.
     public async Task<IReadOnlyList<MediaTrackListItem>> GetLibraryTracksAsync(CancellationToken cancellationToken = default)
     {
         var activeFolder = await _mediaLibraryRepository.GetActiveFolderAsync(cancellationToken);
@@ -48,6 +53,7 @@ public sealed class LibraryManagementService
             .ToArray();
     }
 
+    // Devuelve el estado actual de la biblioteca guardada.
     public async Task<LibraryLoadResult> GetCurrentLibraryAsync(CancellationToken cancellationToken = default)
     {
         var activeFolder = await _mediaLibraryRepository.GetActiveFolderAsync(cancellationToken);

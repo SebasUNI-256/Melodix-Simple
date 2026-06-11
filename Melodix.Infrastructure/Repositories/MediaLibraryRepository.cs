@@ -11,11 +11,13 @@ public sealed class MediaLibraryRepository : IMediaLibraryRepository
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private bool _isInitialized;
 
+    // Guarda la fabrica de contexto para el acceso a datos.
     public MediaLibraryRepository(IDbContextFactory<MelodixDbContext> dbContextFactory)
     {
         _dbContextFactory = dbContextFactory;
     }
 
+    // Obtiene la carpeta activa almacenada.
     public async Task<MusicFolder?> GetActiveFolderAsync(CancellationToken cancellationToken = default)
     {
         await EnsureDatabaseAsync(cancellationToken);
@@ -26,6 +28,7 @@ public sealed class MediaLibraryRepository : IMediaLibraryRepository
             .FirstOrDefaultAsync(folder => folder.IsActive, cancellationToken);
     }
 
+    // Marca una carpeta como activa y desactiva las demas.
     public async Task<MusicFolder> UpsertActiveFolderAsync(string path, CancellationToken cancellationToken = default)
     {
         await EnsureDatabaseAsync(cancellationToken);
@@ -65,6 +68,7 @@ public sealed class MediaLibraryRepository : IMediaLibraryRepository
         return folderEntity;
     }
 
+    // Reemplaza las pistas de una carpeta por las nuevas detectadas.
     public async Task ReplaceTracksForFolderAsync(
         Guid folderId,
         IReadOnlyCollection<MediaTrack> tracks,
@@ -92,6 +96,7 @@ public sealed class MediaLibraryRepository : IMediaLibraryRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    // Lista las pistas guardadas para una carpeta concreta.
     public async Task<IReadOnlyList<MediaTrack>> GetTracksForFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
     {
         await EnsureDatabaseAsync(cancellationToken);
@@ -104,6 +109,7 @@ public sealed class MediaLibraryRepository : IMediaLibraryRepository
             .ToListAsync(cancellationToken);
     }
 
+    // Crea la base de datos solo una vez.
     private async Task EnsureDatabaseAsync(CancellationToken cancellationToken)
     {
         if (_isInitialized)

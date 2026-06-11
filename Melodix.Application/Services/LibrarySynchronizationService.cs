@@ -9,6 +9,7 @@ public sealed class LibrarySynchronizationService : ILibrarySynchronizationServi
     private readonly IMediaLibraryRepository _mediaLibraryRepository;
     private readonly IMediaScanner _mediaScanner;
 
+    // Conecta el sincronizador con el repositorio y el escaner.
     public LibrarySynchronizationService(
         IMediaLibraryRepository mediaLibraryRepository,
         IMediaScanner mediaScanner)
@@ -17,6 +18,7 @@ public sealed class LibrarySynchronizationService : ILibrarySynchronizationServi
         _mediaScanner = mediaScanner;
     }
 
+    // Reescanea la carpeta activa y actualiza las pistas guardadas.
     public async Task<LibraryLoadResult> SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         var activeFolder = await _mediaLibraryRepository.GetActiveFolderAsync(cancellationToken);

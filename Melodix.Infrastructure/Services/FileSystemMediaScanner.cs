@@ -11,6 +11,7 @@ public sealed class FileSystemMediaScanner : IMediaScanner
         ".m4a"
     };
 
+    // Busca archivos de audio compatibles dentro de la carpeta.
     public Task<IReadOnlyList<string>> ScanAsync(string folderPath, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))

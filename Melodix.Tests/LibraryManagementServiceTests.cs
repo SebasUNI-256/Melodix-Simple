@@ -7,6 +7,7 @@ namespace Melodix.Tests;
 public sealed class LibraryManagementServiceTests
 {
     [Fact]
+    // Verifica que iniciar sin carpeta devuelve vacio.
     public async Task InitializeAsync_ReturnsEmptyResult_WhenNoFolderWasSelected()
     {
         var repository = new InMemoryMediaLibraryRepository();
@@ -21,6 +22,7 @@ public sealed class LibraryManagementServiceTests
     }
 
     [Fact]
+    // Verifica que elegir carpeta guarda y carga pistas.
     public async Task SelectLibraryFolderAsync_PersistsAndReturnsTracks()
     {
         var repository = new InMemoryMediaLibraryRepository();
@@ -44,11 +46,13 @@ public sealed class LibraryManagementServiceTests
     {
         private readonly IReadOnlyList<string> _files;
 
+        // Recibe la lista fija de archivos a devolver.
         public FakeMediaScanner(params string[] files)
         {
             _files = files;
         }
 
+        // Devuelve siempre los archivos configurados.
         public Task<IReadOnlyList<string>> ScanAsync(string folderPath, CancellationToken cancellationToken = default)
             => Task.FromResult(_files);
     }
@@ -58,9 +62,11 @@ public sealed class LibraryManagementServiceTests
         private MusicFolder? _activeFolder;
         private readonly List<MediaTrack> _tracks = [];
 
+        // Devuelve la carpeta activa en memoria.
         public Task<MusicFolder?> GetActiveFolderAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(_activeFolder);
 
+        // Guarda la carpeta activa en memoria.
         public Task<MusicFolder> UpsertActiveFolderAsync(string path, CancellationToken cancellationToken = default)
         {
             _activeFolder = new MusicFolder
@@ -74,6 +80,7 @@ public sealed class LibraryManagementServiceTests
             return Task.FromResult(_activeFolder);
         }
 
+        // Reemplaza las pistas en memoria para la carpeta.
         public Task ReplaceTracksForFolderAsync(
             Guid folderId,
             IReadOnlyCollection<MediaTrack> tracks,
@@ -99,6 +106,7 @@ public sealed class LibraryManagementServiceTests
             return Task.CompletedTask;
         }
 
+        // Devuelve las pistas guardadas para la carpeta.
         public Task<IReadOnlyList<MediaTrack>> GetTracksForFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<MediaTrack>>(_tracks.Where(track => track.FolderId == folderId).ToArray());
     }

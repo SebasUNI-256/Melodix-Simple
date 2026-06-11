@@ -11,6 +11,7 @@ public interface IFolderPickerService
 
 public sealed class FolderPickerService : IFolderPickerService
 {
+    // Abre el selector nativo de carpetas.
     public async Task<string?> PickFolderAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

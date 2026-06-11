@@ -12,9 +12,9 @@ public partial class MainPageViewModel : ObservableObject
 {
     private readonly LibraryManagementService _libraryManagementService;
     private readonly PlaybackController _playbackController;
+    private readonly PlaybackQueueService _playbackQueueService;
     private readonly IFolderPickerService _folderPickerService;
     private readonly ITrackMetadataService _trackMetadataService;
-    private readonly Random _random = new();
 
     private bool _hasLibraryFolder;
     private string _currentFolderPath = string.Empty;
@@ -31,18 +31,21 @@ public partial class MainPageViewModel : ObservableObject
     private double _trackPositionSeconds;
     private double _trackDurationSeconds;
     private MediaTrackListItem? _selectedTrack;
-    private RepeatMode _repeatMode = RepeatMode.Off;
+    private PlaybackRepeatMode _repeatMode = PlaybackRepeatMode.Off;
     private IDispatcherTimer? _playbackTimer;
     private bool _playbackEventsAttached;
 
+    // Inicializa el estado de la vista y sus comandos.
     public MainPageViewModel(
         LibraryManagementService libraryManagementService,
         PlaybackController playbackController,
+        PlaybackQueueService playbackQueueService,
         IFolderPickerService folderPickerService,
         ITrackMetadataService trackMetadataService)
     {
         _libraryManagementService = libraryManagementService;
         _playbackController = playbackController;
+        _playbackQueueService = playbackQueueService;
         _folderPickerService = folderPickerService;
         _trackMetadataService = trackMetadataService;
 
@@ -237,20 +240,20 @@ public partial class MainPageViewModel : ObservableObject
 
     public string RepeatButtonText => _repeatMode switch
     {
-        RepeatMode.All => "Repetir Todo",
-        RepeatMode.One => "Repetir 1",
+        PlaybackRepeatMode.All => "Repetir Todo",
+        PlaybackRepeatMode.One => "Repetir 1",
         _ => "Repetir"
     };
 
-    public string RepeatButtonIcon => _repeatMode == RepeatMode.One ? "↺" : "↻";
+    public string RepeatButtonIcon => _repeatMode == PlaybackRepeatMode.One ? "↺" : "↻";
 
     public Color ShuffleButtonBackgroundColor => IsShuffleEnabled ? Color.FromArgb("#244A56") : Colors.Transparent;
 
     public Color ShuffleButtonTextColor => IsShuffleEnabled ? Color.FromArgb("#F4A261") : Colors.White;
 
-    public Color RepeatButtonBackgroundColor => _repeatMode == RepeatMode.Off ? Colors.Transparent : Color.FromArgb("#244A56");
+    public Color RepeatButtonBackgroundColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.Transparent : Color.FromArgb("#244A56");
 
-    public Color RepeatButtonTextColor => _repeatMode == RepeatMode.Off ? Colors.White : Color.FromArgb("#F4A261");
+    public Color RepeatButtonTextColor => _repeatMode == PlaybackRepeatMode.Off ? Colors.White : Color.FromArgb("#F4A261");
 
     public string ElapsedTimeText => FormatTime(TimeSpan.FromSeconds(TrackPositionSeconds));
 
@@ -272,6 +275,7 @@ public partial class MainPageViewModel : ObservableObject
 
     public IRelayCommand CycleRepeatModeCommand { get; }
 
+    // Carga la biblioteca y sincroniza el reproductor.
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         if (IsBusy)
@@ -294,6 +298,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
+    // Reproduce la pista seleccionada por el usuario.
     public async Task SelectTrackAsync(MediaTrackListItem? track, CancellationToken cancellationToken = default)
     {
         if (track is null || IsBusy)
@@ -304,11 +309,13 @@ public partial class MainPageViewModel : ObservableObject
         await PlayTrackInternalAsync(track, cancellationToken);
     }
 
+    // Activa la vista previa del desplazamiento.
     public void BeginSeekPreview()
     {
         _isSeekPreviewActive = true;
     }
 
+    // Actualiza la posicion mostrada durante el arrastre.
     public void PreviewSeek(double positionInSeconds)
     {
         if (!_isSeekPreviewActive)
@@ -319,6 +326,7 @@ public partial class MainPageViewModel : ObservableObject
         TrackPositionSeconds = positionInSeconds;
     }
 
+    // Confirma el salto de reproduccion.
     public async Task CompleteSeekAsync(double positionInSeconds, CancellationToken cancellationToken = default)
     {
         _isSeekPreviewActive = false;
@@ -332,6 +340,7 @@ public partial class MainPageViewModel : ObservableObject
         await RefreshPlaybackStateAsync(cancellationToken);
     }
 
+    // Abre el selector de carpetas y guarda la seleccion.
     private async Task PickFolderAsync()
     {
         if (IsBusy)
@@ -357,6 +366,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
+    // Vuelve a escanear la biblioteca activa.
     private async Task RefreshLibraryAsync()
     {
         if (IsBusy)
@@ -377,6 +387,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
+    // Alterna entre reproducir y pausar.
     private async Task TogglePlayPauseAsync()
     {
         if (SelectedTrack is null || IsBusy)
@@ -405,6 +416,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
+    // Salta a la pista anterior o reinicia la actual.
     private async Task PlayPreviousTrackAsync()
     {
         if (SelectedTrack is null || Tracks.Count == 0 || IsBusy)
@@ -420,19 +432,19 @@ public partial class MainPageViewModel : ObservableObject
             return;
         }
 
-        var currentIndex = Tracks.IndexOf(SelectedTrack);
-        if (currentIndex <= 0)
+        var previousTrack = _playbackQueueService.GetPreviousTrack(Tracks, SelectedTrack);
+        if (previousTrack is null)
         {
-            await PlayTrackInternalAsync(Tracks[0]);
             return;
         }
 
-        await PlayTrackInternalAsync(Tracks[currentIndex - 1]);
+        await PlayTrackInternalAsync(previousTrack);
     }
 
+    // Avanza a la siguiente pista disponible.
     private async Task PlayNextTrackAsync()
     {
-        var nextTrack = GetNextTrack(manualRequest: true);
+        var nextTrack = _playbackQueueService.GetNextTrack(Tracks, SelectedTrack, IsShuffleEnabled, _repeatMode, manualRequest: true);
         if (nextTrack is null)
         {
             return;
@@ -441,19 +453,16 @@ public partial class MainPageViewModel : ObservableObject
         await PlayTrackInternalAsync(nextTrack);
     }
 
+    // Activa o desactiva el modo aleatorio.
     private void ToggleShuffle()
     {
-        IsShuffleEnabled = !IsShuffleEnabled;
+        IsShuffleEnabled = _playbackQueueService.ToggleShuffle(IsShuffleEnabled);
     }
 
+    // Cambia entre los modos de repeticion.
     private void CycleRepeatMode()
     {
-        _repeatMode = _repeatMode switch
-        {
-            RepeatMode.Off => RepeatMode.All,
-            RepeatMode.All => RepeatMode.One,
-            _ => RepeatMode.Off
-        };
+        _repeatMode = _playbackQueueService.CycleRepeatMode(_repeatMode);
 
         OnPropertyChanged(nameof(RepeatButtonText));
         OnPropertyChanged(nameof(RepeatButtonBackgroundColor));
@@ -461,6 +470,7 @@ public partial class MainPageViewModel : ObservableObject
         OnPropertyChanged(nameof(RepeatButtonIcon));
     }
 
+    // Sincroniza el estado visual con el resultado de la biblioteca.
     private void ApplyLibraryResult(LibraryLoadResult result)
     {
         Tracks.Clear();
@@ -515,6 +525,7 @@ public partial class MainPageViewModel : ObservableObject
         OnPropertyChanged(nameof(CanNavigateTracks));
     }
 
+    // Carga metadatos y arranca la reproduccion de una pista.
     private async Task PlayTrackInternalAsync(MediaTrackListItem track, CancellationToken cancellationToken = default)
     {
         IsBusy = true;
@@ -531,6 +542,7 @@ public partial class MainPageViewModel : ObservableObject
         }
     }
 
+    // Obtiene titulo, artista y caratula para la pista actual.
     private async Task ApplyTrackPresentationMetadataAsync(MediaTrackListItem track, CancellationToken cancellationToken)
     {
         var metadata = await _trackMetadataService.GetMetadataAsync(track.FilePath, cancellationToken);
@@ -539,6 +551,7 @@ public partial class MainPageViewModel : ObservableObject
         CurrentArtworkPath = metadata.ArtworkPath;
     }
 
+    // Arranca el timer y el evento que siguen la reproduccion.
     private void EnsurePlaybackTracking()
     {
         if (!_playbackEventsAttached)
@@ -564,11 +577,13 @@ public partial class MainPageViewModel : ObservableObject
         _playbackTimer.Start();
     }
 
+    // Reactiva la logica cuando termina una pista.
     private async void OnPlaybackEnded(object? sender, EventArgs e)
     {
         await HandlePlaybackEndedAsync();
     }
 
+    // Decide que pista reproducir al terminar la actual.
     private async Task HandlePlaybackEndedAsync()
     {
         if (SelectedTrack is null)
@@ -576,13 +591,13 @@ public partial class MainPageViewModel : ObservableObject
             return;
         }
 
-        if (_repeatMode == RepeatMode.One)
+        if (_repeatMode == PlaybackRepeatMode.One)
         {
             await PlayTrackInternalAsync(SelectedTrack);
             return;
         }
 
-        var nextTrack = GetNextTrack(manualRequest: false);
+        var nextTrack = _playbackQueueService.GetNextTrack(Tracks, SelectedTrack, IsShuffleEnabled, _repeatMode, manualRequest: false);
         if (nextTrack is null)
         {
             IsPlaying = false;
@@ -594,44 +609,7 @@ public partial class MainPageViewModel : ObservableObject
         await PlayTrackInternalAsync(nextTrack);
     }
 
-    private MediaTrackListItem? GetNextTrack(bool manualRequest)
-    {
-        if (Tracks.Count == 0)
-        {
-            return null;
-        }
-
-        if (SelectedTrack is null)
-        {
-            return Tracks[0];
-        }
-
-        if (IsShuffleEnabled && Tracks.Count > 1)
-        {
-            var candidates = Tracks.Where(track => track.FilePath != SelectedTrack.FilePath).ToArray();
-            return candidates[_random.Next(candidates.Length)];
-        }
-
-        var currentIndex = Tracks.IndexOf(SelectedTrack);
-        if (currentIndex < 0)
-        {
-            return Tracks[0];
-        }
-
-        var nextIndex = currentIndex + 1;
-        if (nextIndex < Tracks.Count)
-        {
-            return Tracks[nextIndex];
-        }
-
-        if (!manualRequest && _repeatMode == RepeatMode.All)
-        {
-            return Tracks[0];
-        }
-
-        return null;
-    }
-
+    // Sincroniza el estado del reproductor con la UI.
     private async Task RefreshPlaybackStateAsync(CancellationToken cancellationToken = default)
     {
         var state = await _playbackController.GetCurrentPlaybackStateAsync(cancellationToken);
@@ -654,6 +632,7 @@ public partial class MainPageViewModel : ObservableObject
             : "Lista para reproducir.";
     }
 
+    // Convierte una duracion a texto corto.
     private static string FormatTime(TimeSpan time)
     {
         if (time.TotalHours >= 1)
@@ -662,12 +641,5 @@ public partial class MainPageViewModel : ObservableObject
         }
 
         return time.ToString(@"m\:ss");
-    }
-
-    private enum RepeatMode
-    {
-        Off,
-        All,
-        One
     }
 }

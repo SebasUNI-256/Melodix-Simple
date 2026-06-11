@@ -5,6 +5,7 @@ namespace Melodix.Infrastructure.Persistence;
 
 public sealed class MelodixDbContext : DbContext
 {
+    // Recibe la configuracion del contexto de datos.
     public MelodixDbContext(DbContextOptions<MelodixDbContext> options)
         : base(options)
     {
@@ -14,6 +15,7 @@ public sealed class MelodixDbContext : DbContext
 
     public DbSet<MediaTrack> MediaTracks => Set<MediaTrack>();
 
+    // Define tablas, relaciones e indices.
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<MusicFolder>(builder =>

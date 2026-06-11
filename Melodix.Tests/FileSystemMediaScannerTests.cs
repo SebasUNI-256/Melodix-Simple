@@ -5,6 +5,7 @@ namespace Melodix.Tests;
 public sealed class FileSystemMediaScannerTests
 {
     [Fact]
+    // Verifica que solo salgan archivos compatibles.
     public async Task ScanAsync_ReturnsOnlySupportedFilesRecursively()
     {
         var root = CreateTempDirectory();
@@ -26,6 +27,7 @@ public sealed class FileSystemMediaScannerTests
         Assert.Contains(result, path => path.EndsWith("track-c.flac", StringComparison.OrdinalIgnoreCase));
     }
 
+    // Crea una carpeta temporal para la prueba.
     private static DirectoryInfo CreateTempDirectory()
     {
         return Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "MelodixTests", Guid.NewGuid().ToString("N")));

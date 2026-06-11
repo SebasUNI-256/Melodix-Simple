@@ -13,6 +13,7 @@ public partial class MainPage : ContentPage
     private bool _isPlayerExpanded;
     private bool _isPlayerAnimating;
 
+    // Conecta la pagina con su vista modelo.
     public MainPage(MainPageViewModel viewModel)
     {
         InitializeComponent();
@@ -21,6 +22,7 @@ public partial class MainPage : ContentPage
         BindingContext = viewModel;
     }
 
+    // Carga la vista una sola vez al mostrarse.
     protected override async void OnAppearing()
     {
         base.OnAppearing();
@@ -35,6 +37,7 @@ public partial class MainPage : ContentPage
         SyncSelectionFromViewModel();
     }
 
+    // Notifica al modelo cuando cambia la pista seleccionada.
     private async void OnTrackSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_isSyncingSelection)
@@ -53,24 +56,28 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // Activa el modo de arrastre del progreso.
     private void OnPlaybackProgressDragStarted(object? sender, EventArgs e)
     {
         _isSeeking = true;
         _viewModel.BeginSeekPreview();
     }
 
+    // Confirma el salto al soltar el control.
     private async void OnPlaybackProgressDragCompleted(object? sender, EventArgs e)
     {
         _isSeeking = false;
         await _viewModel.CompleteSeekAsync(PlaybackProgressSlider.Value);
     }
 
+    // Confirma el salto desde el reproductor expandido.
     private async void OnExpandedPlaybackProgressDragCompleted(object? sender, EventArgs e)
     {
         _isSeeking = false;
         await _viewModel.CompleteSeekAsync(ExpandedPlaybackProgressSlider.Value);
     }
 
+    // Actualiza la vista previa mientras se arrastra.
     private void OnPlaybackProgressValueChanged(object? sender, ValueChangedEventArgs e)
     {
         if (_isSeeking)
@@ -79,6 +86,7 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // Sincroniza la seleccion visual con el modelo.
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MainPageViewModel.SelectedTrack))
@@ -87,16 +95,19 @@ public partial class MainPage : ContentPage
         }
     }
 
+    // Abre el reproductor expandido.
     private async void OnMiniPlayerTapped(object? sender, TappedEventArgs e)
     {
         await ExpandPlayerAsync();
     }
 
+    // Vuelve al reproductor compacto.
     private async void OnMinimizePlayerClicked(object? sender, EventArgs e)
     {
         await CollapsePlayerAsync();
     }
 
+    // Anima la transicion al modo expandido.
     private async Task ExpandPlayerAsync()
     {
         if (_isPlayerExpanded || _isPlayerAnimating)
@@ -123,6 +134,7 @@ public partial class MainPage : ContentPage
         _isPlayerAnimating = false;
     }
 
+    // Anima el regreso al modo compacto.
     private async Task CollapsePlayerAsync()
     {
         if (!_isPlayerExpanded || _isPlayerAnimating)
@@ -148,6 +160,7 @@ public partial class MainPage : ContentPage
         _isPlayerAnimating = false;
     }
 
+    // Ajusta la seleccion de la lista al modelo actual.
     private void SyncSelectionFromViewModel()
     {
         _isSyncingSelection = true;

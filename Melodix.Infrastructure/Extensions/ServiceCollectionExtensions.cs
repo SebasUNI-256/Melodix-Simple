@@ -9,6 +9,7 @@ namespace Melodix.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    // Registra la infraestructura y la base SQLite.
     public static IServiceCollection AddMelodixInfrastructure(this IServiceCollection services, string databasePath)
     {
         services.AddDbContextFactory<MelodixDbContext>(options =>
