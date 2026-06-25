@@ -4,6 +4,7 @@ using Melodix.Domain.Entities;
 
 namespace Melodix.Application.Services;
 
+// Sincroniza la carpeta activa con las pistas detectadas en disco.
 public sealed class LibrarySynchronizationService : ILibrarySynchronizationService
 {
     private readonly IMediaLibraryRepository _mediaLibraryRepository;
@@ -44,8 +45,9 @@ public sealed class LibrarySynchronizationService : ILibrarySynchronizationServi
 
         var storedTracks = await _mediaLibraryRepository.GetTracksForFolderAsync(activeFolder.Id, cancellationToken);
         var items = storedTracks
-            .OrderBy(track => track.FileName, StringComparer.OrdinalIgnoreCase)
-            .Select(track => new MediaTrackListItem(track.Id, track.FileName, track.FilePath, track.Extension))
+            .OrderBy(track => track.SortOrder)
+            .ThenBy(track => track.FileName, StringComparer.OrdinalIgnoreCase)
+            .Select(track => new MediaTrackListItem(track.Id, track.FileName, track.FilePath, track.Extension, track.SortOrder, track.LyricsFilePath))
             .ToArray();
 
         return new LibraryLoadResult(true, activeFolder.Path, items);

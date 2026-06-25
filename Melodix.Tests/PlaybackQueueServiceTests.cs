@@ -45,9 +45,9 @@ public sealed class PlaybackQueueServiceTests
     {
         return
         [
-            new MediaTrackListItem(Guid.NewGuid(), "Alpha", @"C:\music\alpha.m4a", ".m4a"),
-            new MediaTrackListItem(Guid.NewGuid(), "Beta", @"C:\music\beta.mp4", ".mp4"),
-            new MediaTrackListItem(Guid.NewGuid(), "Gamma", @"C:\music\gamma.flac", ".flac")
+            new MediaTrackListItem(Guid.NewGuid(), "Alpha", @"C:\music\alpha.m4a", ".m4a", 0, null),
+            new MediaTrackListItem(Guid.NewGuid(), "Beta", @"C:\music\beta.mp4", ".mp4", 1, null),
+            new MediaTrackListItem(Guid.NewGuid(), "Gamma", @"C:\music\gamma.flac", ".flac", 2, null)
         ];
     }
 }

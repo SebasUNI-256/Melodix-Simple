@@ -38,6 +38,8 @@ public sealed class MelodixDbContext : DbContext
             builder.Property(track => track.FilePath).IsRequired();
             builder.Property(track => track.FileName).IsRequired();
             builder.Property(track => track.Extension).IsRequired();
+            builder.Property(track => track.SortOrder).IsRequired();
+            builder.Property(track => track.LyricsFilePath);
             builder.Property(track => track.DiscoveredAt).IsRequired();
             builder.HasIndex(track => new { track.FolderId, track.FilePath }).IsUnique();
         });

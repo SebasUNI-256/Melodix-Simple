@@ -15,4 +15,14 @@ public interface IMediaLibraryRepository
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<MediaTrack>> GetTracksForFolderAsync(Guid folderId, CancellationToken cancellationToken = default);
+
+    Task UpdateTrackOrderAsync(
+        Guid folderId,
+        IReadOnlyList<(Guid TrackId, int SortOrder)> trackOrders,
+        CancellationToken cancellationToken = default);
+
+    Task UpdateTrackLyricsFilePathAsync(
+        Guid trackId,
+        string? lyricsFilePath,
+        CancellationToken cancellationToken = default);
 }

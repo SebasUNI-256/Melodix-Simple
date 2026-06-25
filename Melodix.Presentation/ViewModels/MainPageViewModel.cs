@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Melodix.Application.DTOs;
 using Melodix.Application.Services;
+using Melodix.Presentation.Models;
 using Melodix.Presentation.Services;
 using Microsoft.Maui.Graphics;
 
@@ -15,6 +16,8 @@ public partial class MainPageViewModel : ObservableObject
     private readonly PlaybackQueueService _playbackQueueService;
     private readonly IFolderPickerService _folderPickerService;
     private readonly ITrackMetadataService _trackMetadataService;
+    private readonly ILyricsFilePickerService _lyricsFilePickerService;
+    private readonly ILyricsLoaderService _lyricsLoaderService;
 
     private bool _hasLibraryFolder;
     private string _currentFolderPath = string.Empty;
@@ -23,17 +26,23 @@ public partial class MainPageViewModel : ObservableObject
     private string _currentTrackTitle = "Nada seleccionado";
     private string _currentArtistName = string.Empty;
     private string _playbackStatusText = "Elige una pista para empezar.";
+    private string _lyricsStatusText = "Selecciona una pista para cargar su letra.";
+    private string _lyricsSourceText = "Sin letra asociada";
     private string? _currentArtworkPath;
+    private string? _currentLyricsFilePath;
     private bool _isPlaying;
     private bool _isBusy;
     private bool _isShuffleEnabled;
     private bool _isSeekPreviewActive;
+    private bool _isLyricsSynchronized;
     private double _trackPositionSeconds;
     private double _trackDurationSeconds;
+    private int _currentLyricLineIndex = -1;
     private MediaTrackListItem? _selectedTrack;
     private PlaybackRepeatMode _repeatMode = PlaybackRepeatMode.Off;
     private IDispatcherTimer? _playbackTimer;
     private bool _playbackEventsAttached;
+    private bool _isRefreshingPlaybackState;
 
     // Inicializa el estado de la vista y sus comandos.
     public MainPageViewModel(
@@ -41,26 +50,34 @@ public partial class MainPageViewModel : ObservableObject
         PlaybackController playbackController,
         PlaybackQueueService playbackQueueService,
         IFolderPickerService folderPickerService,
-        ITrackMetadataService trackMetadataService)
+        ITrackMetadataService trackMetadataService,
+        ILyricsFilePickerService lyricsFilePickerService,
+        ILyricsLoaderService lyricsLoaderService)
     {
         _libraryManagementService = libraryManagementService;
         _playbackController = playbackController;
         _playbackQueueService = playbackQueueService;
         _folderPickerService = folderPickerService;
         _trackMetadataService = trackMetadataService;
+        _lyricsFilePickerService = lyricsFilePickerService;
+        _lyricsLoaderService = lyricsLoaderService;
 
         Tracks = [];
+        LyricsLines = [];
         PickFolderCommand = new AsyncRelayCommand(PickFolderAsync);
         RefreshLibraryCommand = new AsyncRelayCommand(RefreshLibraryAsync);
         TogglePlayPauseCommand = new AsyncRelayCommand(TogglePlayPauseAsync);
         SelectTrackCommand = new AsyncRelayCommand<MediaTrackListItem?>(SelectTrackAsync);
         PlayPreviousTrackCommand = new AsyncRelayCommand(PlayPreviousTrackAsync);
         PlayNextTrackCommand = new AsyncRelayCommand(PlayNextTrackAsync);
+        SelectLyricsFileCommand = new AsyncRelayCommand(SelectLyricsFileAsync);
         ToggleShuffleCommand = new RelayCommand(ToggleShuffle);
         CycleRepeatModeCommand = new RelayCommand(CycleRepeatMode);
     }
 
     public ObservableCollection<MediaTrackListItem> Tracks { get; }
+
+    public ObservableCollection<LyricLineViewItem> LyricsLines { get; }
 
     public bool HasLibraryFolder
     {
@@ -117,6 +134,18 @@ public partial class MainPageViewModel : ObservableObject
         private set => SetProperty(ref _playbackStatusText, value);
     }
 
+    public string LyricsStatusText
+    {
+        get => _lyricsStatusText;
+        private set => SetProperty(ref _lyricsStatusText, value);
+    }
+
+    public string LyricsSourceText
+    {
+        get => _lyricsSourceText;
+        private set => SetProperty(ref _lyricsSourceText, value);
+    }
+
     public string? CurrentArtworkPath
     {
         get => _currentArtworkPath;
@@ -152,6 +181,7 @@ public partial class MainPageViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(CanTogglePlayback));
                 OnPropertyChanged(nameof(CanNavigateTracks));
+                OnPropertyChanged(nameof(CanSelectLyricsFile));
             }
         }
     }
@@ -179,6 +209,7 @@ public partial class MainPageViewModel : ObservableObject
             if (SetProperty(ref _trackPositionSeconds, value))
             {
                 OnPropertyChanged(nameof(ElapsedTimeText));
+                UpdateActiveLyricLine();
             }
         }
     }
@@ -206,6 +237,7 @@ public partial class MainPageViewModel : ObservableObject
                 OnPropertyChanged(nameof(CanTogglePlayback));
                 OnPropertyChanged(nameof(CanNavigateTracks));
                 OnPropertyChanged(nameof(CanSeek));
+                OnPropertyChanged(nameof(CanSelectLyricsFile));
             }
         }
     }
@@ -225,6 +257,8 @@ public partial class MainPageViewModel : ObservableObject
     public bool CanNavigateTracks => !IsBusy && Tracks.Count > 0;
 
     public bool CanSeek => SelectedTrack is not null && TrackDurationSeconds > 0;
+
+    public bool CanSelectLyricsFile => !IsBusy && SelectedTrack is not null;
 
     public string PlayPauseButtonText => IsPlaying ? "Pausar" : "Reproducir";
 
@@ -259,6 +293,16 @@ public partial class MainPageViewModel : ObservableObject
 
     public string DurationTimeText => FormatTime(TimeSpan.FromSeconds(TrackDurationSeconds));
 
+    public bool HasLyrics => LyricsLines.Count > 0;
+
+    public bool IsLyricsSynchronized => _isLyricsSynchronized;
+
+    public int CurrentLyricLineIndex
+    {
+        get => _currentLyricLineIndex;
+        private set => SetProperty(ref _currentLyricLineIndex, value);
+    }
+
     public IAsyncRelayCommand PickFolderCommand { get; }
 
     public IAsyncRelayCommand RefreshLibraryCommand { get; }
@@ -270,6 +314,8 @@ public partial class MainPageViewModel : ObservableObject
     public IAsyncRelayCommand PlayPreviousTrackCommand { get; }
 
     public IAsyncRelayCommand PlayNextTrackCommand { get; }
+
+    public IAsyncRelayCommand SelectLyricsFileCommand { get; }
 
     public IRelayCommand ToggleShuffleCommand { get; }
 
@@ -338,6 +384,45 @@ public partial class MainPageViewModel : ObservableObject
 
         await _playbackController.SeekAsync(TimeSpan.FromSeconds(positionInSeconds), cancellationToken);
         await RefreshPlaybackStateAsync(cancellationToken);
+    }
+
+    // Reordena la cola cuando una pista se suelta sobre otra.
+    public async Task HandleTrackDropAsync(Guid sourceTrackId, Guid targetTrackId, CancellationToken cancellationToken = default)
+    {
+        if (sourceTrackId == targetTrackId || Tracks.Count < 2)
+        {
+            return;
+        }
+
+        var sourceIndex = FindTrackIndex(sourceTrackId);
+        var targetIndex = FindTrackIndex(targetTrackId);
+        if (sourceIndex < 0 || targetIndex < 0)
+        {
+            return;
+        }
+
+        Tracks.Move(sourceIndex, targetIndex);
+        ReindexTracks();
+        await _libraryManagementService.UpdateTrackOrderAsync(Tracks, cancellationToken);
+        OnPropertyChanged(nameof(HasTracks));
+    }
+
+    // Marca la pista que recibira la insercion visual.
+    public void SetDropTarget(Guid? targetTrackId)
+    {
+        foreach (var track in Tracks)
+        {
+            track.IsDropTarget = targetTrackId is not null && track.Id == targetTrackId.Value;
+        }
+    }
+
+    // Marca la pista que se esta arrastrando.
+    public void SetDraggedTrack(Guid? sourceTrackId)
+    {
+        foreach (var track in Tracks)
+        {
+            track.IsBeingDragged = sourceTrackId is not null && track.Id == sourceTrackId.Value;
+        }
     }
 
     // Abre el selector de carpetas y guarda la seleccion.
@@ -509,6 +594,7 @@ public partial class MainPageViewModel : ObservableObject
             CurrentArtistName = string.Empty;
             CurrentArtworkPath = null;
             PlaybackStatusText = $"{result.Tracks.Count} pistas disponibles.";
+            ResetLyricsState("Selecciona una pista para cargar su letra.", "Sin letra asociada");
         }
         else if (SelectedTrack is null)
         {
@@ -518,6 +604,7 @@ public partial class MainPageViewModel : ObservableObject
             PlaybackStatusText = result.HasLibraryFolder
                 ? "Aun no hay pistas disponibles en esta carpeta."
                 : "Elige una carpeta para empezar.";
+            ResetLyricsState("Selecciona una pista para cargar su letra.", "Sin letra asociada");
         }
 
         OnPropertyChanged(nameof(IsLibraryEmpty));
@@ -533,6 +620,7 @@ public partial class MainPageViewModel : ObservableObject
         {
             SelectedTrack = track;
             await ApplyTrackPresentationMetadataAsync(track, cancellationToken);
+            await LoadLyricsForTrackAsync(track, cancellationToken);
             await _playbackController.PlayTrackAsync(track.FilePath, cancellationToken);
             await RefreshPlaybackStateAsync(cancellationToken);
         }
@@ -549,6 +637,44 @@ public partial class MainPageViewModel : ObservableObject
         CurrentTrackTitle = string.IsNullOrWhiteSpace(metadata.Title) ? track.FileName : metadata.Title;
         CurrentArtistName = metadata.Artist;
         CurrentArtworkPath = metadata.ArtworkPath;
+    }
+
+    // Abre el selector de letra y guarda la ruta elegida.
+    private async Task SelectLyricsFileAsync()
+    {
+        if (SelectedTrack is null)
+        {
+            LyricsStatusText = "Selecciona una pista antes de elegir letra.";
+            return;
+        }
+
+        if (IsBusy)
+        {
+            LyricsStatusText = "Espera a que termine la accion actual.";
+            return;
+        }
+
+        string? filePath;
+        try
+        {
+            LyricsStatusText = "Abriendo selector de letra...";
+            filePath = await _lyricsFilePickerService.PickLyricsFileAsync();
+        }
+        catch (Exception ex)
+        {
+            LyricsStatusText = $"No se pudo abrir el selector: {ex.Message}";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            LyricsStatusText = "No se eligio ningun archivo de letra.";
+            return;
+        }
+
+        SelectedTrack.LyricsFilePath = filePath;
+        await _libraryManagementService.UpdateTrackLyricsFilePathAsync(SelectedTrack.Id, filePath);
+        await LoadLyricsForTrackAsync(SelectedTrack);
     }
 
     // Arranca el timer y el evento que siguen la reproduccion.
@@ -572,7 +698,7 @@ public partial class MainPageViewModel : ObservableObject
         }
 
         _playbackTimer = dispatcher.CreateTimer();
-        _playbackTimer.Interval = TimeSpan.FromMilliseconds(500);
+        _playbackTimer.Interval = TimeSpan.FromMilliseconds(100);
         _playbackTimer.Tick += async (_, _) => await RefreshPlaybackStateAsync();
         _playbackTimer.Start();
     }
@@ -612,24 +738,152 @@ public partial class MainPageViewModel : ObservableObject
     // Sincroniza el estado del reproductor con la UI.
     private async Task RefreshPlaybackStateAsync(CancellationToken cancellationToken = default)
     {
-        var state = await _playbackController.GetCurrentPlaybackStateAsync(cancellationToken);
-        IsPlaying = state.IsPlaying;
-
-        if (!_isSeekPreviewActive)
-        {
-            TrackPositionSeconds = state.Position.TotalSeconds;
-        }
-
-        TrackDurationSeconds = state.Duration.TotalSeconds;
-
-        if (SelectedTrack is null)
+        if (_isRefreshingPlaybackState)
         {
             return;
         }
 
-        PlaybackStatusText = state.IsPlaying
-            ? "Reproduciendo ahora."
-            : "Lista para reproducir.";
+        _isRefreshingPlaybackState = true;
+
+        try
+        {
+            var state = await _playbackController.GetCurrentPlaybackStateAsync(cancellationToken);
+            IsPlaying = state.IsPlaying;
+
+            if (!_isSeekPreviewActive)
+            {
+                TrackPositionSeconds = state.Position.TotalSeconds;
+            }
+
+            TrackDurationSeconds = state.Duration.TotalSeconds;
+
+            if (SelectedTrack is null)
+            {
+                return;
+            }
+
+            PlaybackStatusText = state.IsPlaying
+                ? "Reproduciendo ahora."
+                : "Lista para reproducir.";
+        }
+        finally
+        {
+            _isRefreshingPlaybackState = false;
+        }
+    }
+
+    // Carga la letra asociada a la pista actual.
+    private async Task LoadLyricsForTrackAsync(MediaTrackListItem? track, CancellationToken cancellationToken = default)
+    {
+        if (track is null)
+        {
+            ResetLyricsState("Selecciona una pista para cargar su letra.", "Sin letra asociada");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(track.LyricsFilePath))
+        {
+            ResetLyricsState("Esta pista no tiene letra asociada.", "Sin letra asociada");
+            return;
+        }
+
+        var document = await _lyricsLoaderService.LoadAsync(track.LyricsFilePath, cancellationToken);
+        if (document is null)
+        {
+            ResetLyricsState("No pudimos abrir el archivo de letra seleccionado.", Path.GetFileName(track.LyricsFilePath));
+            return;
+        }
+
+        _currentLyricsFilePath = document.FilePath;
+        LyricsSourceText = Path.GetFileName(document.FilePath);
+        _isLyricsSynchronized = document.IsSynchronized;
+        LyricsStatusText = document.IsSynchronized
+            ? "Letra sincronizada activa."
+            : "Letra cargada sin sincronizacion por tiempo.";
+
+        LyricsLines.Clear();
+        foreach (var line in document.Lines)
+        {
+            LyricsLines.Add(line);
+        }
+
+        OnPropertyChanged(nameof(HasLyrics));
+        OnPropertyChanged(nameof(IsLyricsSynchronized));
+        UpdateActiveLyricLine();
+    }
+
+    // Limpia la vista de letra cuando no hay un archivo valido.
+    private void ResetLyricsState(string statusText, string sourceText)
+    {
+        _currentLyricsFilePath = null;
+        _isLyricsSynchronized = false;
+        LyricsStatusText = statusText;
+        LyricsSourceText = sourceText;
+        LyricsLines.Clear();
+        CurrentLyricLineIndex = -1;
+        OnPropertyChanged(nameof(HasLyrics));
+        OnPropertyChanged(nameof(IsLyricsSynchronized));
+    }
+
+    // Resalta la linea que corresponde al tiempo actual.
+    private void UpdateActiveLyricLine()
+    {
+        if (!_isLyricsSynchronized || LyricsLines.Count == 0)
+        {
+            foreach (var line in LyricsLines)
+            {
+                line.IsActive = false;
+                line.UpdateDisplay(TimeSpan.Zero, false);
+            }
+
+            CurrentLyricLineIndex = -1;
+            return;
+        }
+
+        var currentPosition = TimeSpan.FromSeconds(TrackPositionSeconds);
+        var activeIndex = -1;
+        for (var index = 0; index < LyricsLines.Count; index++)
+        {
+            var timestamp = LyricsLines[index].Timestamp;
+            if (timestamp is null || timestamp > currentPosition)
+            {
+                break;
+            }
+
+            activeIndex = index;
+        }
+
+        for (var index = 0; index < LyricsLines.Count; index++)
+        {
+            var isActive = index == activeIndex;
+            LyricsLines[index].IsActive = isActive;
+            LyricsLines[index].UpdateDisplay(currentPosition, isActive);
+        }
+
+        CurrentLyricLineIndex = activeIndex;
+    }
+
+    // Busca una pista por su identificador dentro de la cola.
+    private int FindTrackIndex(Guid trackId)
+    {
+        for (var index = 0; index < Tracks.Count; index++)
+        {
+            if (Tracks[index].Id == trackId)
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    // Recalcula el orden persistible despues de mover una pista.
+    private void ReindexTracks()
+    {
+        for (var index = 0; index < Tracks.Count; index++)
+        {
+            Tracks[index].SortOrder = index;
+        }
     }
 
     // Convierte una duracion a texto corto.

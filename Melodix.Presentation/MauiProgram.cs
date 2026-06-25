@@ -31,6 +31,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPlaybackService, WindowsPlaybackService>();
         builder.Services.AddSingleton<IFolderPickerService, FolderPickerService>();
         builder.Services.AddSingleton<ITrackMetadataService, WindowsTrackMetadataService>();
+        builder.Services.AddSingleton<ILyricsFilePickerService, LyricsFilePickerService>();
+        builder.Services.AddSingleton<ILyricsLoaderService, LyricsLoaderService>();
         builder.Services.AddSingleton<MainPageViewModel>();
         builder.Services.AddSingleton<MainPage>();
 

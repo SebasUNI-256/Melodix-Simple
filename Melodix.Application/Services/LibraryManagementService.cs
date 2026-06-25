@@ -3,6 +3,7 @@ using Melodix.Application.DTOs;
 
 namespace Melodix.Application.Services;
 
+// Coordina la biblioteca cargada y las actualizaciones sobre pistas.
 public sealed class LibraryManagementService
 {
     private readonly IMediaLibraryRepository _mediaLibraryRepository;
@@ -48,8 +49,9 @@ public sealed class LibraryManagementService
 
         var tracks = await _mediaLibraryRepository.GetTracksForFolderAsync(activeFolder.Id, cancellationToken);
         return tracks
-            .OrderBy(track => track.FileName, StringComparer.OrdinalIgnoreCase)
-            .Select(track => new MediaTrackListItem(track.Id, track.FileName, track.FilePath, track.Extension))
+            .OrderBy(track => track.SortOrder)
+            .ThenBy(track => track.FileName, StringComparer.OrdinalIgnoreCase)
+            .Select(track => new MediaTrackListItem(track.Id, track.FileName, track.FilePath, track.Extension, track.SortOrder, track.LyricsFilePath))
             .ToArray();
     }
 
@@ -65,4 +67,22 @@ public sealed class LibraryManagementService
         var tracks = await GetLibraryTracksAsync(cancellationToken);
         return new LibraryLoadResult(true, activeFolder.Path, tracks);
     }
+
+    public async Task UpdateTrackOrderAsync(IReadOnlyList<MediaTrackListItem> tracks, CancellationToken cancellationToken = default)
+    {
+        var activeFolder = await _mediaLibraryRepository.GetActiveFolderAsync(cancellationToken);
+        if (activeFolder is null || tracks.Count == 0)
+        {
+            return;
+        }
+
+        var orders = tracks
+            .Select((track, index) => (track.Id, index))
+            .ToArray();
+
+        await _mediaLibraryRepository.UpdateTrackOrderAsync(activeFolder.Id, orders, cancellationToken);
+    }
+
+    public Task UpdateTrackLyricsFilePathAsync(Guid trackId, string? lyricsFilePath, CancellationToken cancellationToken = default)
+        => _mediaLibraryRepository.UpdateTrackLyricsFilePathAsync(trackId, lyricsFilePath, cancellationToken);
 }

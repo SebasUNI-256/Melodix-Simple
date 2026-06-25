@@ -12,6 +12,7 @@ public partial class MainPage : ContentPage
     private bool _isSyncingSelection;
     private bool _isPlayerExpanded;
     private bool _isPlayerAnimating;
+    private Guid? _draggedTrackId;
 
     // Conecta la pagina con su vista modelo.
     public MainPage(MainPageViewModel viewModel)
@@ -93,6 +94,11 @@ public partial class MainPage : ContentPage
         {
             MainThread.BeginInvokeOnMainThread(SyncSelectionFromViewModel);
         }
+
+        if (e.PropertyName == nameof(MainPageViewModel.CurrentLyricLineIndex))
+        {
+            MainThread.BeginInvokeOnMainThread(ScrollLyricsIntoView);
+        }
     }
 
     // Abre el reproductor expandido.
@@ -169,6 +175,7 @@ public partial class MainPage : ContentPage
             if (_viewModel.SelectedTrack is null)
             {
                 TracksCollectionView.SelectedItem = null;
+                ExpandedQueueCollectionView.SelectedItem = null;
                 return;
             }
 
@@ -176,10 +183,112 @@ public partial class MainPage : ContentPage
                 string.Equals(track.FilePath, _viewModel.SelectedTrack.FilePath, StringComparison.OrdinalIgnoreCase));
 
             TracksCollectionView.SelectedItem = matchingTrack;
+            ExpandedQueueCollectionView.SelectedItem = matchingTrack;
         }
         finally
         {
             _isSyncingSelection = false;
         }
+    }
+
+    private async void OnExpandedQueueSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_isSyncingSelection)
+        {
+            return;
+        }
+
+        if (e.CurrentSelection.FirstOrDefault() is MediaTrackListItem track)
+        {
+            if (string.Equals(track.FilePath, _viewModel.SelectedTrack?.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            await _viewModel.SelectTrackAsync(track);
+        }
+    }
+
+    private async void OnExpandedQueueTrackTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as Element)?.BindingContext is MediaTrackListItem track)
+        {
+            if (string.Equals(track.FilePath, _viewModel.SelectedTrack?.FilePath, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            await _viewModel.SelectTrackAsync(track);
+        }
+    }
+
+    private void OnQueueTrackDragStarting(object? sender, DragStartingEventArgs e)
+    {
+        if ((sender as Element)?.BindingContext is not MediaTrackListItem track)
+        {
+            return;
+        }
+
+        _draggedTrackId = track.Id;
+        _viewModel.SetDraggedTrack(track.Id);
+        e.Data.Properties.Add("TrackId", track.Id.ToString());
+    }
+
+    private void OnQueueTrackDragOver(object? sender, DragEventArgs e)
+    {
+        e.AcceptedOperation = DataPackageOperation.Copy;
+
+        if ((sender as Element)?.BindingContext is MediaTrackListItem targetTrack && _draggedTrackId != targetTrack.Id)
+        {
+            _viewModel.SetDropTarget(targetTrack.Id);
+        }
+    }
+
+    private void OnQueueTrackDragLeave(object? sender, DragEventArgs e)
+    {
+        e.AcceptedOperation = DataPackageOperation.Copy;
+    }
+
+    private async void OnQueueTrackDrop(object? sender, DropEventArgs e)
+    {
+        try
+        {
+            if ((sender as Element)?.BindingContext is not MediaTrackListItem targetTrack)
+            {
+                return;
+            }
+
+            var sourceTrackId = _draggedTrackId;
+            if (sourceTrackId is null && e.Data.Properties.TryGetValue("TrackId", out var trackIdValue) && Guid.TryParse(trackIdValue?.ToString(), out var droppedTrackId))
+            {
+                sourceTrackId = droppedTrackId;
+            }
+
+            if (sourceTrackId is null)
+            {
+                return;
+            }
+
+            await _viewModel.HandleTrackDropAsync(sourceTrackId.Value, targetTrack.Id);
+            e.Handled = true;
+            SyncSelectionFromViewModel();
+        }
+        finally
+        {
+            _draggedTrackId = null;
+            _viewModel.SetDraggedTrack(null);
+            _viewModel.SetDropTarget(null);
+        }
+    }
+
+    private void ScrollLyricsIntoView()
+    {
+        var index = _viewModel.CurrentLyricLineIndex;
+        if (index < 0 || index >= _viewModel.LyricsLines.Count)
+        {
+            return;
+        }
+
+        LyricsCollectionView.ScrollTo(index, position: ScrollToPosition.Center, animate: false);
     }
 }

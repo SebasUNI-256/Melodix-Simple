@@ -80,6 +80,8 @@ public sealed class LibrarySynchronizationServiceTests
                 FilePath = track.FilePath,
                 Extension = track.Extension,
                 FolderId = folderId,
+                SortOrder = track.SortOrder,
+                LyricsFilePath = track.LyricsFilePath,
                 DiscoveredAt = scannedAt
             }).ToList();
 
@@ -89,5 +91,11 @@ public sealed class LibrarySynchronizationServiceTests
         // Devuelve las pistas que coinciden con la carpeta.
         public Task<IReadOnlyList<MediaTrack>> GetTracksForFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<MediaTrack>>(_tracks.ToArray());
+
+        public Task UpdateTrackOrderAsync(Guid folderId, IReadOnlyList<(Guid TrackId, int SortOrder)> trackOrders, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task UpdateTrackLyricsFilePathAsync(Guid trackId, string? lyricsFilePath, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
     }
 }

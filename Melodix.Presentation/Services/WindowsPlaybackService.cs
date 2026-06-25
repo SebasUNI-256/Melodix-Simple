@@ -25,12 +25,12 @@ public sealed class WindowsPlaybackService : IPlaybackService, IDisposable
 
         if (string.IsNullOrWhiteSpace(filePath))
         {
-            throw new ArgumentException("A valid file path is required.", nameof(filePath));
+            throw new ArgumentException("Es necesario un archivo valido.", nameof(filePath));
         }
 
         if (!File.Exists(filePath))
         {
-            throw new FileNotFoundException("The selected media file could not be found.", filePath);
+            throw new FileNotFoundException("El archivo multimedia no pudo ser encontrado.", filePath);
         }
 
         if (!string.Equals(_currentFilePath, filePath, StringComparison.OrdinalIgnoreCase))

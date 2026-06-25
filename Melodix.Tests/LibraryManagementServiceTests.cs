@@ -95,6 +95,8 @@ public sealed class LibraryManagementServiceTests
                 FilePath = track.FilePath,
                 Extension = track.Extension,
                 FolderId = folderId,
+                SortOrder = track.SortOrder,
+                LyricsFilePath = track.LyricsFilePath,
                 DiscoveredAt = scannedAt
             }));
 
@@ -109,5 +111,30 @@ public sealed class LibraryManagementServiceTests
         // Devuelve las pistas guardadas para la carpeta.
         public Task<IReadOnlyList<MediaTrack>> GetTracksForFolderAsync(Guid folderId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<MediaTrack>>(_tracks.Where(track => track.FolderId == folderId).ToArray());
+
+        public Task UpdateTrackOrderAsync(Guid folderId, IReadOnlyList<(Guid TrackId, int SortOrder)> trackOrders, CancellationToken cancellationToken = default)
+        {
+            var orders = trackOrders.ToDictionary(item => item.TrackId, item => item.SortOrder);
+            foreach (var track in _tracks.Where(item => item.FolderId == folderId))
+            {
+                if (orders.TryGetValue(track.Id, out var sortOrder))
+                {
+                    track.SortOrder = sortOrder;
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateTrackLyricsFilePathAsync(Guid trackId, string? lyricsFilePath, CancellationToken cancellationToken = default)
+        {
+            var track = _tracks.FirstOrDefault(item => item.Id == trackId);
+            if (track is not null)
+            {
+                track.LyricsFilePath = lyricsFilePath;
+            }
+
+            return Task.CompletedTask;
+        }
     }
 }

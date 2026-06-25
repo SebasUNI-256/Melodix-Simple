@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Melodix.Application.DTOs;assembly=Melodix.Application"
+             xmlns:lyricModels="clr-namespace:Melodix.Presentation.Models"
              xmlns:viewModels="clr-namespace:Melodix.Presentation.ViewModels"
              x:Class="Melodix.Presentation.MainPage"
              x:DataType="viewModels:MainPageViewModel"
@@ -228,115 +229,259 @@
               TranslationY="36"
               BackgroundColor="{StaticResource Black}"
               Padding="28,22,28,32">
-            <Grid RowDefinitions="Auto,*,Auto,Auto,Auto"
-                  RowSpacing="20"
-                  HorizontalOptions="Fill"
-                  MaximumWidthRequest="430">
-                <Button Text="&#x2304;"
-                        Clicked="OnMinimizePlayerClicked"
-                        WidthRequest="44"
-                        HeightRequest="44"
-                        Padding="0"
-                        HorizontalOptions="Start"
-                        FontSize="26"
-                        FontFamily="Segoe UI Symbol"
-                        BackgroundColor="Transparent"
-                        TextColor="{StaticResource White}" />
+            <Grid ColumnDefinitions="300,*,360"
+                  ColumnSpacing="24"
+                  HorizontalOptions="Fill">
+                <Border Grid.Column="0"
+                        Background="{StaticResource Gray950Brush}"
+                        Padding="18"
+                        Stroke="{StaticResource Gray600Brush}"
+                        StrokeShape="RoundRectangle 24">
+                    <Grid RowDefinitions="Auto,*"
+                          RowSpacing="14">
+                        <Label Text="Siguiente en cola"
+                               FontFamily="OpenSansSemibold"
+                               FontSize="18"
+                               TextColor="{StaticResource White}" />
 
-                <Grid Grid.Row="1"
-                      HeightRequest="360"
-                      MaximumHeightRequest="380"
-                      VerticalOptions="Center">
-                    <Border BackgroundColor="{StaticResource Primary}"
-                            StrokeThickness="0"
-                            StrokeShape="RoundRectangle 16"
-                            IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
-                    <Image Source="{Binding CurrentArtworkPath}"
-                           Aspect="AspectFit"
-                           IsVisible="{Binding HasCurrentArtwork}" />
-                </Grid>
+                        <CollectionView x:Name="ExpandedQueueCollectionView"
+                                        Grid.Row="1"
+                                        ItemsSource="{Binding Tracks}"
+                                        SelectedItem="{Binding SelectedTrack, Mode=OneWay}"
+                                        SelectionMode="Single"
+                                        SelectionChanged="OnExpandedQueueSelectionChanged">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:MediaTrackListItem">
+                                    <Border Margin="0,0,0,12"
+                                            Padding="14"
+                                            BackgroundColor="{StaticResource Gray900}"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 18">
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border"
+                                                         Binding="{Binding IsBeingDragged}"
+                                                         Value="True">
+                                                <Setter Property="Opacity"
+                                                        Value="0.55" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
 
-                <VerticalStackLayout Grid.Row="2"
-                                     Spacing="4">
-                    <Label Text="{Binding CurrentTrackTitle}"
-                           FontFamily="OpenSansSemibold"
-                           FontSize="24"
-                           TextColor="{StaticResource White}"
-                           LineBreakMode="TailTruncation"
-                           MaxLines="1" />
-                    <Label Text="{Binding CurrentArtistName}"
-                           FontSize="15"
-                           TextColor="{StaticResource Gray300}"
-                           LineBreakMode="TailTruncation"
-                           MaxLines="1"
-                           IsVisible="{Binding HasCurrentArtist}" />
-                </VerticalStackLayout>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnExpandedQueueTrackTapped" />
+                                            <DropGestureRecognizer AllowDrop="True"
+                                                                   DragOver="OnQueueTrackDragOver"
+                                                                   DragLeave="OnQueueTrackDragLeave"
+                                                                   Drop="OnQueueTrackDrop" />
+                                        </Border.GestureRecognizers>
 
-                <Grid Grid.Row="3"
-                      RowDefinitions="Auto,Auto"
-                      RowSpacing="2">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
-                        <Label Text="{Binding ElapsedTimeText}"
-                               FontSize="12"
-                               TextColor="{StaticResource Gray300}" />
-                        <Label Grid.Column="2"
-                               Text="{Binding DurationTimeText}"
-                               FontSize="12"
-                               TextColor="{StaticResource Gray300}" />
+                                        <Grid RowDefinitions="Auto,Auto"
+                                              RowSpacing="8">
+                                            <BoxView HeightRequest="3"
+                                                     CornerRadius="2"
+                                                     BackgroundColor="{StaticResource Primary}"
+                                                     IsVisible="{Binding IsDropTarget}" />
+
+                                            <Grid Grid.Row="1"
+                                                  ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="12">
+                                                <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding FileName}"
+                                                       FontFamily="OpenSansSemibold"
+                                                       FontSize="15"
+                                                       TextColor="{StaticResource White}"
+                                                       LineBreakMode="TailTruncation"
+                                                       MaxLines="1" />
+                                                <Label Text="{Binding Extension}"
+                                                       FontSize="12"
+                                                       TextColor="{StaticResource Gray400}" />
+                                                </VerticalStackLayout>
+
+                                                <Label Grid.Column="1"
+                                                       Text="&#x2630;"
+                                                       VerticalOptions="Center"
+                                                       FontSize="18"
+                                                       TextColor="{StaticResource Gray300}">
+                                                    <Label.GestureRecognizers>
+                                                        <DragGestureRecognizer DragStarting="OnQueueTrackDragStarting" />
+                                                    </Label.GestureRecognizers>
+                                                </Label>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Border>
+
+                <Grid Grid.Column="1"
+                      RowDefinitions="Auto,*,Auto,Auto,Auto"
+                      RowSpacing="20"
+                      HorizontalOptions="Fill"
+                      MaximumWidthRequest="430">
+                    <Button Text="&#x2304;"
+                            Clicked="OnMinimizePlayerClicked"
+                            WidthRequest="44"
+                            HeightRequest="44"
+                            Padding="0"
+                            HorizontalOptions="Start"
+                            FontSize="26"
+                            FontFamily="Segoe UI Symbol"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource White}" />
+
+                    <Grid Grid.Row="1"
+                          HeightRequest="360"
+                          MaximumHeightRequest="380"
+                          VerticalOptions="Center">
+                        <Border BackgroundColor="{StaticResource Primary}"
+                                StrokeThickness="0"
+                                StrokeShape="RoundRectangle 16"
+                                IsVisible="{Binding HasCurrentArtworkPlaceholder}" />
+                        <Image Source="{Binding CurrentArtworkPath}"
+                               Aspect="AspectFit"
+                               IsVisible="{Binding HasCurrentArtwork}" />
                     </Grid>
 
-                    <Slider x:Name="ExpandedPlaybackProgressSlider"
-                            Grid.Row="1"
-                            Minimum="0"
-                            Maximum="{Binding TrackDurationSeconds}"
-                            Value="{Binding TrackPositionSeconds}"
-                            MinimumTrackColor="{StaticResource Primary}"
-                            MaximumTrackColor="{StaticResource Gray600}"
-                            ThumbColor="{StaticResource Secondary}"
-                            DragStarted="OnPlaybackProgressDragStarted"
-                            DragCompleted="OnExpandedPlaybackProgressDragCompleted"
-                            ValueChanged="OnPlaybackProgressValueChanged" />
+                    <VerticalStackLayout Grid.Row="2"
+                                         Spacing="4">
+                        <Label Text="{Binding CurrentTrackTitle}"
+                               FontFamily="OpenSansSemibold"
+                               FontSize="24"
+                               TextColor="{StaticResource White}"
+                               LineBreakMode="TailTruncation"
+                               MaxLines="1" />
+                        <Label Text="{Binding CurrentArtistName}"
+                               FontSize="15"
+                               TextColor="{StaticResource Gray300}"
+                               LineBreakMode="TailTruncation"
+                               MaxLines="1"
+                               IsVisible="{Binding HasCurrentArtist}" />
+                    </VerticalStackLayout>
+
+                    <Grid Grid.Row="3"
+                          RowDefinitions="Auto,Auto"
+                          RowSpacing="2">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Label Text="{Binding ElapsedTimeText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray300}" />
+                            <Label Grid.Column="2"
+                                   Text="{Binding DurationTimeText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray300}" />
+                        </Grid>
+
+                        <Slider x:Name="ExpandedPlaybackProgressSlider"
+                                Grid.Row="1"
+                                Minimum="0"
+                                Maximum="{Binding TrackDurationSeconds}"
+                                Value="{Binding TrackPositionSeconds}"
+                                MinimumTrackColor="{StaticResource Primary}"
+                                MaximumTrackColor="{StaticResource Gray600}"
+                                ThumbColor="{StaticResource Secondary}"
+                                DragStarted="OnPlaybackProgressDragStarted"
+                                DragCompleted="OnExpandedPlaybackProgressDragCompleted"
+                                ValueChanged="OnPlaybackProgressValueChanged" />
+                    </Grid>
+
+                    <Grid Grid.Row="4"
+                          ColumnDefinitions="*,Auto,Auto,Auto,*"
+                          ColumnSpacing="18"
+                          HorizontalOptions="Center">
+                        <Button Grid.Column="1"
+                                Text="{Binding PreviousTrackIcon}"
+                                Command="{Binding PlayPreviousTrackCommand}"
+                                IsEnabled="{Binding CanNavigateTracks}"
+                                WidthRequest="52"
+                                HeightRequest="52"
+                                Padding="0"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="20"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Gray300}" />
+                        <Button Grid.Column="2"
+                                Text="{Binding PlayPauseButtonIcon}"
+                                Command="{Binding TogglePlayPauseCommand}"
+                                IsEnabled="{Binding CanTogglePlayback}"
+                                WidthRequest="64"
+                                HeightRequest="64"
+                                Padding="0"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="24"
+                                CornerRadius="32"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="{StaticResource White}" />
+                        <Button Grid.Column="3"
+                                Text="{Binding NextTrackIcon}"
+                                Command="{Binding PlayNextTrackCommand}"
+                                IsEnabled="{Binding CanNavigateTracks}"
+                                WidthRequest="52"
+                                HeightRequest="52"
+                                Padding="0"
+                                FontFamily="Segoe UI Symbol"
+                                FontSize="20"
+                                BackgroundColor="Transparent"
+                                TextColor="{StaticResource Gray300}" />
+                    </Grid>
                 </Grid>
 
-                <Grid Grid.Row="4"
-                      ColumnDefinitions="*,Auto,Auto,Auto,*"
-                      ColumnSpacing="18"
-                      HorizontalOptions="Center">
-                    <Button Grid.Column="1"
-                            Text="{Binding PreviousTrackIcon}"
-                            Command="{Binding PlayPreviousTrackCommand}"
-                            IsEnabled="{Binding CanNavigateTracks}"
-                            WidthRequest="52"
-                            HeightRequest="52"
-                            Padding="0"
-                            FontFamily="Segoe UI Symbol"
-                            FontSize="20"
-                            BackgroundColor="Transparent"
-                            TextColor="{StaticResource Gray300}" />
-                    <Button Grid.Column="2"
-                            Text="{Binding PlayPauseButtonIcon}"
-                            Command="{Binding TogglePlayPauseCommand}"
-                            IsEnabled="{Binding CanTogglePlayback}"
-                            WidthRequest="64"
-                            HeightRequest="64"
-                            Padding="0"
-                            FontFamily="Segoe UI Symbol"
-                            FontSize="24"
-                            CornerRadius="32"
-                            BackgroundColor="{StaticResource Primary}"
-                            TextColor="{StaticResource White}" />
-                    <Button Grid.Column="3"
-                            Text="{Binding NextTrackIcon}"
-                            Command="{Binding PlayNextTrackCommand}"
-                            IsEnabled="{Binding CanNavigateTracks}"
-                            WidthRequest="52"
-                            HeightRequest="52"
-                            Padding="0"
-                            FontFamily="Segoe UI Symbol"
-                            FontSize="20"
-                            BackgroundColor="Transparent"
-                            TextColor="{StaticResource Gray300}" />
-                </Grid>
+                <Border Grid.Column="2"
+                        Background="{StaticResource Gray950Brush}"
+                        Padding="18"
+                        Stroke="{StaticResource Gray600Brush}"
+                        StrokeShape="RoundRectangle 24">
+                    <Grid RowDefinitions="Auto,Auto,Auto,*"
+                          RowSpacing="12">
+                        <Label Text="Letra"
+                               FontFamily="OpenSansSemibold"
+                               FontSize="18"
+                               TextColor="{StaticResource White}" />
+
+                        <Button Grid.Row="1"
+                                Text="Elegir archivo de letra"
+                                Command="{Binding SelectLyricsFileCommand}" />
+
+                        <VerticalStackLayout Grid.Row="2"
+                                             Spacing="2">
+                            <Label Text="{Binding LyricsSourceText}"
+                                   FontFamily="OpenSansSemibold"
+                                   FontSize="13"
+                                   TextColor="{StaticResource White}"
+                                   LineBreakMode="TailTruncation" />
+                            <Label Text="{Binding LyricsStatusText}"
+                                   FontSize="12"
+                                   TextColor="{StaticResource Gray300}" />
+                        </VerticalStackLayout>
+
+                        <CollectionView x:Name="LyricsCollectionView"
+                                        Grid.Row="3"
+                                        ItemsSource="{Binding LyricsLines}"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="lyricModels:LyricLineViewItem">
+                                    <Border Margin="0,0,0,8"
+                                            Padding="10,8"
+                                            StrokeThickness="0"
+                                            StrokeShape="RoundRectangle 14">
+                                        <Border.Triggers>
+                                            <DataTrigger TargetType="Border"
+                                                         Binding="{Binding IsActive}"
+                                                         Value="True">
+                                                <Setter Property="BackgroundColor"
+                                                        Value="{StaticResource Gray900}" />
+                                            </DataTrigger>
+                                        </Border.Triggers>
+
+                                        <Label FormattedText="{Binding DisplayText}"
+                                               FontSize="14"
+                                               LineBreakMode="WordWrap" />
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+                </Border>
             </Grid>
         </Grid>
     </Grid>
